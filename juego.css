@@ -1,0 +1,52 @@
+body {
+  font-family: sans-serif;
+  padding: 20px;
+  background: #f9f9f9;
+}
+
+#formulario, #juego {
+  max-width: 480px;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+#juego {
+  display: none;
+}
+
+.color-btn {
+  width: 40px;
+  height: 40px;
+  margin: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  display: inline-block;
+}
+
+.color-btn.selected {
+  border-color: black;
+}
+
+#historial div {
+  margin: 5px 0;
+}
+
+#estadoApp {
+  color: green;
+  font-weight: bold;
+}
+
+#debug {
+  background: #fee;
+  border: 1px solid #f00;
+  padding: 10px;
+  white-space: pre-wrap;
+  margin-top: 10px;
+  max-height: 120px;
+  overflow-y: auto;
+  font-size: 0.9em;
+  color: #900;
+}

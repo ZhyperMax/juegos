@@ -110,7 +110,7 @@ function iniciarJuego(nombreJugador) {
   escucharTodosLosIntentos();
   mostrarJugadoresEnSala();
   escucharChat();
-  escucharJugadoresYActivarJuego(); 
+  escucharJugadoresYActivarJuego(); // Nueva función centralizada para verificar jugadores
 
   get(ref(db, `salas/${salaId}/secuencia`)).then(snap => {
     if (snap.exists()) secuenciaSala = snap.val();
@@ -126,9 +126,11 @@ function escucharJugadoresYActivarJuego() {
     const jugadoresCount = Object.keys(jugadores).length;
     const estadoJuegoRef = ref(db, `salas/${salaId}/estadoJuego`);
     
+    // Obtener el estado actual del juego
     const estadoSnap = await get(estadoJuegoRef);
     const estadoActual = estadoSnap.val();
 
+    // Si hay dos jugadores y el juego no ha iniciado, lo inicia.
     if (jugadoresCount === 2 && estadoActual === "esperando") {
       await update(ref(db, `salas/${salaId}`), { estadoJuego: "jugando" });
       const primerJugadorId = Object.keys(jugadores)[0];
@@ -136,6 +138,7 @@ function escucharJugadoresYActivarJuego() {
     }
   });
 }
+
 
 function escucharEstadoJuego() {
   onValue(ref(db, `salas/${salaId}/estadoJuego`), snap => {
@@ -163,12 +166,9 @@ function escucharTurno() {
       document.querySelector("button[onclick='enviarIntento()']").disabled = false;
       iniciarTemporizadorTurno();
     } else {
-      const otroJugadorSnap = await get(ref(db, `salas/${salaId}/jugadores/${jugadorTurno}/nombre`));
-      const nombreOtroJugador = otroJugadorSnap.val() || "otro jugador";
-      mostrarEstado(`Es el turno de ${nombreOtroJugador}`, "orange");
+      mostrarEstado("Esperá tu turno", "orange");
       clearInterval(timerInterval);
       document.getElementById("tiempoRestante").textContent = "-";
-      document.querySelector("button[onclick='enviarIntento()']").disabled = true;
     }
   });
 }

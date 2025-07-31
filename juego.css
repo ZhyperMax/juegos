@@ -68,6 +68,15 @@ h1 {
   border-radius: 5px;
 }
 
+#historial h3 {
+  margin-top: 0;
+}
+
+#historial p {
+  margin: 5px 0;
+}
+
+
 
 
 #formulario, #juego {
@@ -100,10 +109,138 @@ h1 {
   margin: 5px 0;
 }
 
-#estadoApp {
-  color: green;
+#tiempoRestante {
   font-weight: bold;
+  color: red;
 }
+
+#salirBtn {
+  display: block;
+  margin: 20px auto;
+  padding: 10px 20px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#salirBtn:hover {
+  background-color: #c82333;
+}
+
+#salirBtn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+
+#chat-container {
+  width: 350px;
+  max-width: 100%;
+  background: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  font-family: Arial, sans-serif;
+}
+
+#mensajes {
+  height: 250px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  background: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #333;
+}
+
+#mensajes p {
+  margin: 6px 0;
+  word-wrap: break-word;
+}
+
+#mensajeInput {
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  flex-grow: 1;
+  transition: border-color 0.2s ease;
+}
+
+#mensajeInput:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+#chat-container button {
+  margin-left: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  background-color: #007bff;
+  border: none;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#chat-container button:hover {
+  background-color: #0056b3;
+}
+
+/* Para que el input y botón estén en línea */
+#chat-container {
+  flex-direction: column;
+}
+
+#chat-container > input,
+#chat-container > button {
+  /* Cambiamos para que el input y botón queden en línea */
+  width: auto;
+}
+
+#chat-container > div {
+  /* Mantener el div de mensajes con flex-grow para ocupar el espacio */
+  flex-grow: 1;
+}
+
+/* Si querés que el input y botón estén en la misma línea */
+#chat-container {
+  display: flex;
+  flex-direction: column;
+}
+
+#chat-input-area {
+  display: flex;
+  margin-top: 8px;
+}
+
+#chat-input-area input {
+  flex-grow: 1;
+}
+
+#chat-input-area button {
+  margin-left: 8px;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 

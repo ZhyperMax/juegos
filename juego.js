@@ -322,21 +322,33 @@ function mostrarJugadoresEnSala() {
 
 function actualizarListaSalas() {
   const contenedor = document.getElementById("contenedorSalas");
-  onValue(ref(db, "salas"), snap => {
+  onValue(ref(db, "salas"), async (snap) => {
     const salas = snap.val() || {};
     contenedor.innerHTML = "";
+    let haySalasDisponibles = false;
 
     for (let codigo in salas) {
       const jugadores = salas[codigo].jugadores || {};
-      if (Object.keys(jugadores).length < 2) {
+      const jugadoresCount = Object.keys(jugadores).length;
+      
+      // Si una sala tiene 0 jugadores, la eliminamos.
+      // Esta es la parte central de la nueva lógica de limpieza.
+      if (jugadoresCount === 0) {
+        await remove(ref(db, `salas/${codigo}`));
+        continue; // Pasamos a la siguiente sala
+      }
+
+      // Solo mostramos salas con menos de 2 jugadores
+      if (jugadoresCount < 2) {
+        haySalasDisponibles = true;
         const div = document.createElement("div");
-        div.innerHTML = `Sala <b>${codigo}</b> (${Object.keys(jugadores).length}/2) 
+        div.innerHTML = `Sala <b>${codigo}</b> (${jugadoresCount}/2) 
           <button onclick="unirseDesdeLista('${codigo}')">Unirse</button>`;
         contenedor.appendChild(div);
       }
     }
 
-    if (contenedor.innerHTML === "") {
+    if (!haySalasDisponibles) {
       contenedor.innerHTML = "<i>No hay salas disponibles</i>";
     }
   });

@@ -4,6 +4,72 @@ body {
   background: #f9f9f9;
 }
 
+h1 {
+  text-align: center;
+  color: #333;
+}
+
+#formulario {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#formulario input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+#formulario button {
+  padding: 10px 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#formulario button:hover {
+  background-color: #218838;
+}
+
+#formulario button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+#colores {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+#colores .color {
+  width: 50px;
+  height: 50px;
+  margin: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#colores .color:hover {
+  opacity: 0.8;
+}
+
+
+#historial {
+  margin-top: 20px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+
+
 #formulario, #juego {
   max-width: 480px;
   margin: auto;
@@ -39,14 +105,5 @@ body {
   font-weight: bold;
 }
 
-#debug {
-  background: #fee;
-  border: 1px solid #f00;
-  padding: 10px;
-  white-space: pre-wrap;
-  margin-top: 10px;
-  max-height: 120px;
-  overflow-y: auto;
-  font-size: 0.9em;
-  color: #900;
-}
+
+

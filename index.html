@@ -1,65 +1,77 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Adivina Colores Online</title>
-  <link rel="stylesheet" href="juego.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Adivina Colores Online</title>
+    <link rel="stylesheet" href="juego.css" />
+    <link rel="icon" href="img/icon.ico" type="image/x-icon" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<div id="formulario">
-  <div id="crear">
-    <h2>Crear Sala</h2>
-    <input type="text" id="nombreCrear" placeholder="Tu nombre" /><br/><br/>
-    <button onclick="crearSala()">Crear Sala</button>
-  </div>
-
-  <hr style="margin: 30px 0;" />
-
-  <div id="unirse">
-    <h2>Unirse a Sala</h2>
-    <input type="text" id="nombreUnir" placeholder="Tu nombre" /><br/><br/>
-    <input type="text" id="codigoUnir" placeholder="Código de sala" maxlength="5" style="text-transform: uppercase;" /><br/><br/>
-    <button onclick="unirseSala()">Unirse a Sala</button>
-  </div>
-
-  <hr style="margin: 30px 0;" />
-
-  <div id="listaSalas">
-    <h2>Salas disponibles</h2>
-    <input type="text" id="nombreLista" placeholder="Tu nombre" /><br/><br/>
-    <div id="contenedorSalas">Cargando salas...</div>
-  </div>
-
-  <p id="estadoApp"></p>
+<div class="logo-container">
+    <img src="img/logo.png" alt="Logo" class="logo" />
 </div>
 
-<div id="juego" style="display: none;">
-  <h2>Jugador: <span id="jugadorNombre"></span></h2>
-  <h3>Código de Sala: <span id="codigoSala"></span></h3>
+<div class="app-container">
 
-  <p>Seleccioná <b>4 colores</b> para tu intento:</p>
-  <div id="coloresDisponibles"></div>
-  <button onclick="enviarIntento()">Enviar intento</button>
+    <div id="formulario">
+        <div id="crear" class="form-section">
+            <h2>Crear Sala</h2>
+            <input type="text" id="nombreCrear" placeholder="Tu nombre" /><br/><br/>
+            <button class="btn btn-primary" onclick="crearSala()">Crear Sala</button>
+        </div>
 
-  <p>Tiempo restante: <span id="tiempoRestante">15</span> segundos</p>
+        <hr />
 
-  <h3>Historial de intentos:</h3>
-  <div id="historial"></div>
+        <div id="unirse" class="form-section">
+            <h2>Unirse a Sala</h2>
+            <input type="text" id="nombreUnir" placeholder="Tu nombre" /><br/><br/>
+            <input type="text" id="codigoUnir" placeholder="Código de sala" maxlength="5" style="text-transform: uppercase;" /><br/><br/>
+            <button class="btn btn-success" onclick="unirseSala()">Unirse a Sala</button>
+        </div>
 
-  <hr style="margin: 20px 0;" />
-  
-<div id="chat-container">
-  <div id="mensajes"></div>
-  <div id="chat-input-area">
-    <input type="text" id="mensajeInput" placeholder="Escribe un mensaje..." />
-    <button onclick="enviarMensaje()">Enviar</button>
-  </div>
-</div>
+        <hr />
 
+        <div id="listaSalas" class="form-section">
+            <h2>Salas disponibles</h2>
+            <input type="text" id="nombreLista" placeholder="Tu nombre" /><br/><br/>
+            <div id="contenedorSalas">Cargando salas...</div>
+        </div>
 
-  <button id="salirBtn" style="display:none;" onclick="salirDeSala()">Salir de la sala</button>
+        <p id="estadoApp"></p>
+    </div>
+
+    <div id="juego">
+        <div class="game-header">
+            <h2 class="player-name">Jugador: <span id="jugadorNombre"></span></h2>
+            <h3>Código de Sala: <span id="codigoSala"></span></h3>
+        </div>
+
+        <p class="game-instruction">Seleccioná <b>4 colores</b> para tu intento:</p>
+        <div id="coloresDisponibles"></div>
+        <button class="btn btn-primary" onclick="enviarIntento()">Enviar intento</button>
+
+        <p class="timer-display">Tiempo restante: <span id="tiempoRestante">15</span> segundos</p>
+
+        <h3 class="historial-title">Historial de intentos:</h3>
+        <div id="historial"></div>
+
+        <hr />
+
+        <div id="chat-container">
+            <div id="mensajes"></div>
+            <div id="chat-input-area">
+                <input type="text" id="mensajeInput" placeholder="Escribe un mensaje..." />
+                <button class="btn btn-secondary" onclick="enviarMensaje()">Enviar</button>
+            </div>
+        </div>
+
+        <button id="salirBtn" class="btn btn-danger" onclick="salirDeSala()">Salir de la sala</button>
+    </div>
 </div>
 
 <script type="module" src="juego.js"></script>

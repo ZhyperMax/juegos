@@ -110,7 +110,7 @@ function iniciarJuego(nombreJugador) {
   escucharTodosLosIntentos();
   mostrarJugadoresEnSala();
   escucharChat();
-  escucharJugadoresYActivarJuego(); // Nueva función centralizada para verificar jugadores
+  escucharJugadoresYActivarJuego(); // Nueva función centralizada para verificar jugadores
 
   get(ref(db, `salas/${salaId}/secuencia`)).then(snap => {
     if (snap.exists()) secuenciaSala = snap.val();
@@ -121,22 +121,22 @@ function iniciarJuego(nombreJugador) {
 }
 
 function escucharJugadoresYActivarJuego() {
-  onValue(ref(db, `salas/${salaId}/jugadores`), async snap => {
-    const jugadores = snap.val() || {};
-    const jugadoresCount = Object.keys(jugadores).length;
-    const estadoJuegoRef = ref(db, `salas/${salaId}/estadoJuego`);
-    
-    // Obtener el estado actual del juego
-    const estadoSnap = await get(estadoJuegoRef);
-    const estadoActual = estadoSnap.val();
+  onValue(ref(db, `salas/${salaId}/jugadores`), async snap => {
+    const jugadores = snap.val() || {};
+    const jugadoresCount = Object.keys(jugadores).length;
+    const estadoJuegoRef = ref(db, `salas/${salaId}/estadoJuego`);
+    
+    // Obtener el estado actual del juego
+    const estadoSnap = await get(estadoJuegoRef);
+    const estadoActual = estadoSnap.val();
 
-    // Si hay dos jugadores y el juego no ha iniciado, lo inicia.
-    if (jugadoresCount === 2 && estadoActual === "esperando") {
-      await update(ref(db, `salas/${salaId}`), { estadoJuego: "jugando" });
-      const primerJugadorId = Object.keys(jugadores)[0];
-      await update(ref(db, `salas/${salaId}`), { turno: primerJugadorId });
-    }
-  });
+    // Si hay dos jugadores y el juego no ha iniciado, lo inicia.
+    if (jugadoresCount === 2 && estadoActual === "esperando") {
+      await update(ref(db, `salas/${salaId}`), { estadoJuego: "jugando" });
+      const primerJugadorId = Object.keys(jugadores)[0];
+      await update(ref(db, `salas/${salaId}`), { turno: primerJugadorId });
+    }
+  });
 }
 
 
@@ -201,12 +201,12 @@ async function enviarIntento() {
   const data = snap.val();
   if (data.intentosCount >= 10) return mostrarEstado("Máximo 10 intentos", "red");
 
-  const resultado = compararIntento(seleccionados, secuenciaSala);
+  const resultado = compararIntento(seleccionados, secuenciaSala);
   await push(ref(db, `salas/${salaId}/jugadores/${userId}/intentos`), {
-    intento: seleccionados,
-    aciertosColorPos: resultado.aciertosColorPos,
-    aciertosColor: resultado.aciertosColor
-  });
+    intento: seleccionados,
+    aciertosColorPos: resultado.aciertosColorPos,
+    aciertosColor: resultado.aciertosColor
+  });
 
   await update(jugadorRef, { intentosCount: data.intentosCount + 1 });
 
@@ -265,7 +265,7 @@ function escucharTodosLosIntentos() {
       const jugador = data[jugadorId];
       const nombre = jugador.nombre;
       const intentos = jugador.intentos || {};
-      const intentosCount = jugador.intentosCount || 0;
+      const intentosCount = jugador.intentosCount || 0;
 
       const titulo = document.createElement("p");
       titulo.textContent = `Intentos de ${nombre} (restantes: ${10 - intentosCount})`;
@@ -273,16 +273,16 @@ function escucharTodosLosIntentos() {
 
       Object.values(intentos).forEach(intentoData => {
         const div = document.createElement("div");
-        div.className = "intento-container";
+        div.className = "intento-container";
         intentoData.intento.forEach(c => {
           const box = document.createElement("div");
           box.className = "color-btn";
           box.style.backgroundColor = c;
           div.appendChild(box);
         });
-        const resultados = document.createElement("p");
-        resultados.textContent = `Posición: ${intentoData.aciertosColorPos}, Color: ${intentoData.aciertosColor}`;
-        div.appendChild(resultados);
+        const resultados = document.createElement("p");
+        resultados.textContent = `Posición: ${intentoData.aciertosColorPos}, Color: ${intentoData.aciertosColor}`;
+        div.appendChild(resultados);
         historial.appendChild(div);
       });
     }
@@ -330,9 +330,9 @@ function actualizarListaSalas() {
     for (let codigo in salas) {
       const jugadores = salas[codigo].jugadores || {};
       const jugadoresCount = Object.keys(jugadores).length;
-      
-      // Si una sala tiene 0 jugadores, la eliminamos.
-      // Esta es la parte central de la nueva lógica de limpieza.
+      
+      // Si una sala tiene 0 jugadores, la eliminamos.
+      // Esta es la parte central de la nueva lógica de limpieza.
       if (jugadoresCount === 0) {
         await remove(ref(db, `salas/${codigo}`));
         continue; // Pasamos a la siguiente sala
@@ -376,15 +376,15 @@ async function unirseDesdeLista(codigo) {
 
 async function salirDeSala() {
   if (!salaId || !userId) return;
-  const salaRef = ref(db, `salas/${salaId}`);
+  const salaRef = ref(db, `salas/${salaId}`);
 
   await remove(ref(db, `salas/${salaId}/jugadores/${userId}`));
 
-  // Obtener la lista actualizada de jugadores
+  // Obtener la lista actualizada de jugadores
   const snap = await get(ref(db, `salas/${salaId}/jugadores`));
   const jugadores = snap.val();
 
-  // Si no hay jugadores o la propiedad es nula, eliminar la sala
+  // Si no hay jugadores o la propiedad es nula, eliminar la sala
   if (!jugadores || Object.keys(jugadores).length === 0) {
     await remove(salaRef);
   }
@@ -427,7 +427,7 @@ function escucharChat() {
       .sort((a, b) => a.timestamp - b.timestamp)
       .forEach(m => {
         const div = document.createElement("div");
-        div.innerHTML = `<b>${m.usuario}:</b> ${m.texto}`;
+        div.innerHTML = `<b>${m.usuario}:</b> ${m.texto}`;
         contenedor.appendChild(div);
       });
     contenedor.scrollTop = contenedor.scrollHeight;

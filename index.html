@@ -14,6 +14,10 @@
 
 <div class="logo-container">
     <img src="img/logo.png" alt="Logo" class="logo" />
+    <button id="infoBtn" class="btn-info" onclick="mostrarInfoJuego()">
+        <span class="info-icon">ℹ️</span>
+        <span class="info-text">Info del Juego</span>
+    </button>
 </div>
 
 <div class="app-container">
@@ -22,6 +26,23 @@
         <div id="crear" class="form-section">
             <h2>Crear Sala</h2>
             <input type="text" id="nombreCrear" placeholder="Tu nombre" /><br/><br/>
+            
+            <div class="modo-juego-selector">
+                <h4>Modo de juego:</h4>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="modoJuego" value="solo" checked>
+                        <span class="radio-custom"></span>
+                        Un jugador (solo)
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="modoJuego" value="dos">
+                        <span class="radio-custom"></span>
+                        Dos jugadores
+                    </label>
+                </div>
+            </div>
+            
             <button class="btn btn-primary" onclick="crearSala()">Crear Sala</button>
         </div>
 
@@ -65,12 +86,121 @@
         <div id="chat-container">
             <div id="mensajes"></div>
             <div id="chat-input-area">
-                <input type="text" id="mensajeInput" placeholder="Escribe un mensaje..." />
+                <input type="text" id="mensajeInput" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter') enviarMensaje()" />
                 <button class="btn btn-secondary" onclick="enviarMensaje()">Enviar</button>
             </div>
         </div>
 
         <button id="salirBtn" class="btn btn-danger" onclick="salirDeSala()">Salir de la sala</button>
+    </div>
+</div>
+
+<!-- Modal de Información del Juego -->
+<div id="modalInfo" class="modal-overlay" onclick="cerrarModalInfo()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2>🎨 Adivina Colores Online</h2>
+            <button class="modal-close" onclick="cerrarModalInfo()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="info-section">
+                <h3>🎯 Objetivo del Juego</h3>
+                <p>Adivinar una secuencia secreta de <strong>4 colores únicos</strong> en máximo <strong>10 intentos</strong>.</p>
+            </div>
+
+            <div class="info-section">
+                <h3>🎮 Modos de Juego</h3>
+                <div class="mode-grid">
+                    <div class="mode-card">
+                        <h4>🧑‍💻 Modo Solo</h4>
+                        <ul>
+                            <li>Juego individual contra la máquina</li>
+                            <li><strong>15 segundos</strong> por intento</li>
+                            <li>El tiempo agotado cuenta como intento perdido</li>
+                        </ul>
+                    </div>
+                    <div class="mode-card">
+                        <h4>👥 Modo Multijugador</h4>
+                        <ul>
+                            <li>Hasta <strong>2 jugadores</strong> por sala</li>
+                            <li>Sistema de turnos alternos</li>
+                            <li>Chat en tiempo real</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>🎨 Colores Disponibles</h3>
+                <div class="color-showcase">
+                    <div class="color-item" style="background-color: red;">Rojo</div>
+                    <div class="color-item" style="background-color: blue;">Azul</div>
+                    <div class="color-item" style="background-color: green;">Verde</div>
+                    <div class="color-item" style="background-color: yellow;">Amarillo</div>
+                    <div class="color-item" style="background-color: orange;">Naranja</div>
+                    <div class="color-item" style="background-color: purple;">Violeta</div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>📊 Sistema de Pistas</h3>
+                <div class="hints-grid">
+                    <div class="hint-item">
+                        <span class="hint-icon correct">✓</span>
+                        <span><strong>Posición correcta:</strong> Color correcto en posición exacta</span>
+                    </div>
+                    <div class="hint-item">
+                        <span class="hint-icon partial">⚬</span>
+                        <span><strong>Color correcto:</strong> Color presente pero mal ubicado</span>
+                    </div>
+                    <div class="hint-item">
+                        <span class="hint-icon wrong">❌</span>
+                        <span><strong>Tiempo agotado:</strong> Intento perdido por tiempo</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>🎯 Cómo Jugar</h3>
+                <ol class="game-steps">
+                    <li><strong>Crear o unirse</strong> a una sala</li>
+                    <li><strong>Seleccionar</strong> 4 colores en el orden deseado (aparecen números 1, 2, 3, 4)</li>
+                    <li><strong>Enviar</strong> el intento antes de que se agote el tiempo</li>
+                    <li><strong>Interpretar</strong> las pistas para ajustar la estrategia</li>
+                    <li><strong>Ganar</strong> adivinando la secuencia exacta</li>
+                </ol>
+            </div>
+
+            <div class="info-section">
+                <h3>✨ Características Destacadas</h3>
+                <div class="features-grid">
+                    <div class="feature-item">🎨 Selección visual con números de orden</div>
+                    <div class="feature-item">📊 Contador prominente de intentos</div>
+                    <div class="feature-item">🎉 Efectos de victoria con confeti</div>
+                    <div class="feature-item">💔 Revelación de secuencia en derrota</div>
+                    <div class="feature-item">🔊 Sonidos dinámicos</div>
+                    <div class="feature-item">💬 Chat en tiempo real</div>
+                    <div class="feature-item">📱 Diseño responsivo</div>
+                    <div class="feature-item">🌈 Secuencias únicas sin repetición</div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>💡 Estrategias Recomendadas</h3>
+                <ul class="strategy-list">
+                    <li><strong>Primer intento:</strong> Usar 4 colores diferentes para obtener información</li>
+                    <li><strong>Análisis:</strong> Combinar información de colores y posiciones</li>
+                    <li><strong>Eliminación:</strong> Descartar colores que no aparecen en las pistas</li>
+                    <li><strong>Tiempo:</strong> Planificar antes de seleccionar en modo solo</li>
+                </ul>
+            </div>
+
+            <div class="info-footer">
+                <p>🎮 <strong>¡Disfruta jugando Adivina Colores Online!</strong></p>
+                <p><small>Desarrollado con Firebase Realtime Database • Agosto 2025</small></p>
+                <p><small>Desarrollado por Humberto Ovejero • Agosto 2025</small></p>
+            </div>
+        </div>
     </div>
 </div>
 

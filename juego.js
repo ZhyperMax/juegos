@@ -713,6 +713,7 @@ function iniciarTemporizadorTurno(modoJuego = "dos") {
   // En modo solo no hay temporizador
   if (modoJuego === "solo") {
     document.getElementById("tiempoRestante").textContent = "∞";
+    clearInterval(timerInterval); // Limpiar cualquier timer existente
     return;
   }
 
@@ -732,12 +733,9 @@ function iniciarTemporizadorTurno(modoJuego = "dos") {
       const salaData = salaSnap.val();
       const modoJuegoActual = salaData?.modoJuego || "dos";
       
-      if (modoJuegoActual === "solo") {
-        // En modo solo, contar como intento perdido
+      // Solo en modo multijugador contar como intento perdido o pasar turno
+      if (modoJuegoActual === "dos") {
         await contarIntentoTiempoAgotado();
-      } else {
-        // En modo multijugador, pasar turno
-        pasarTurno();
       }
     }
   }, 1000);
@@ -783,7 +781,12 @@ async function contarIntentoTiempoAgotado() {
   // Reiniciar el temporizador para el siguiente intento
   mostrarEstado("¡Intentá de nuevo! Seleccioná más rápido.");
   document.querySelector("button[onclick='enviarIntento()']").disabled = false;
-  iniciarTemporizadorTurno();
+  
+  // Obtener el modo de juego para el temporizador
+  const salaSnap = await get(ref(db, `salas/${salaId}`));
+  const salaData = salaSnap.val();
+  const modoJuego = salaData?.modoJuego || "dos";
+  iniciarTemporizadorTurno(modoJuego);
 }
 
 async function enviarIntento() {
@@ -847,7 +850,7 @@ async function enviarIntento() {
     // En modo solo, el jugador puede seguir jugando
     mostrarEstado("¡Intentá de nuevo!");
     document.querySelector("button[onclick='enviarIntento()']").disabled = false;
-    iniciarTemporizadorTurno();
+    iniciarTemporizadorTurno(modoJuego);
   } else {
     // En modo multijugador, pasar turno
     pasarTurno();
@@ -1378,8 +1381,9 @@ function escucharTodosLosIntentos() {
       seccionJugador.appendChild(nombreJugador);
       historial.appendChild(seccionJugador);
 
-      // Mostrar intentos del jugador
-      Object.values(intentos).forEach(intentoData => {
+      // Mostrar intentos del jugador en orden cronológico (más reciente al final)
+      const intentosArray = Object.values(intentos).sort((a, b) => a.timestamp - b.timestamp);
+      intentosArray.forEach(intentoData => {
         const div = document.createElement("div");
         div.className = "intento-container";
         div.style.cssText = `

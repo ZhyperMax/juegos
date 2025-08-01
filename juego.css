@@ -16,6 +16,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-width: 200px;
 }
 
 .logo {
@@ -24,6 +25,7 @@ body {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease;
+  display: block;
 }
 
 .logo:hover {
@@ -33,7 +35,9 @@ body {
 .app-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 80px 20px 20px 20px; /* Aumentar padding-top para dar espacio a elementos fijos */
+  min-height: 100vh;
+  box-sizing: border-box;
 }
 
 h1 {
@@ -171,16 +175,124 @@ h1 {
 
 
 
-#formulario, #juego {
+/* Estilos para formularios individuales */
+.formulario {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.formulario h3 {
+  text-align: center;
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.formulario label {
+  display: block;
+  margin: 15px 0;
+  font-size: 16px;
+  color: #495057;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.formulario label input[type="radio"] {
+  margin-right: 10px;
+  transform: scale(1.2);
+}
+
+.formulario input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  margin: 15px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.formulario input[type="text"]:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.formulario button {
+  width: 100%;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.formulario button:hover {
+  background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.formulario button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Layout para los formularios principales */
+#formulario {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Grid responsive para pantallas más grandes */
+@media (min-width: 768px) {
+  #formulario {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  
+  #formularioCrear {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  
+  #formularioUnir {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  
+  #listaSalas {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  
+  #estadoApp {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}
+
+#juego {
   max-width: 600px;
   margin: auto;
   background: white;
   padding: 30px;
   border-radius: 15px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-}
-
-#juego {
   display: none;
 }
 
@@ -659,7 +771,9 @@ hr {
   border: none;
   height: 2px;
   background: linear-gradient(90deg, transparent, #ddd, transparent);
-  margin: 30px 0;
+  margin: 30px auto;
+  max-width: 800px;
+  width: 80%;
 }
 
 /* Mejorar la disposición en móviles */
@@ -670,6 +784,15 @@ hr {
   
   #formulario {
     gap: 20px;
+  }
+  
+  .formulario {
+    margin-bottom: 15px;
+    padding: 20px;
+  }
+  
+  .formulario h3 {
+    font-size: 20px;
   }
   
   .form-section {
@@ -759,6 +882,11 @@ hr {
     top: 10px;
     left: 10px;
   }
+  
+  /* Ajustar padding del contenedor principal en móviles */
+  .app-container {
+    padding: 60px 15px 20px 15px;
+  }
 }
 
 /* Para pantallas muy pequeñas */
@@ -797,6 +925,11 @@ hr {
   
   #mensajes {
     height: 120px;
+  }
+  
+  /* Ajustar padding del contenedor principal en pantallas muy pequeñas */
+  .app-container {
+    padding: 50px 10px 15px 10px;
   }
 }
 
@@ -2112,6 +2245,328 @@ hr {
   .ranking-info {
     flex-direction: column;
     gap: 5px;
+  }
+}
+
+/* ===================== SISTEMA DE AUTENTICACIÓN ===================== */
+
+.modal-auth-overlay {
+  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.8);
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.modal-auth {
+  max-width: 500px;
+  width: 90%;
+  margin: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-auth .modal-header {
+  background: transparent;
+  text-align: center;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.modal-auth .modal-header h2 {
+  margin: 0;
+  font-size: 24px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.auth-tabs {
+  display: flex;
+  margin: 20px 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 5px;
+}
+
+.auth-tabs .tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.auth-tabs .tab-btn.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.auth-tab-content {
+  display: none;
+}
+
+.auth-tab-content.active {
+  display: block;
+}
+
+.auth-form {
+  padding: 20px 0;
+}
+
+.auth-form h3 {
+  text-align: center;
+  margin: 0 0 25px 0;
+  font-size: 20px;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.form-help {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 10px;
+  margin: 20px 0 15px 0;
+  transition: all 0.3s ease;
+  text-transform: none;
+  letter-spacing: 0.5px;
+}
+
+.auth-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.auth-help {
+  text-align: center;
+  margin: 15px 0 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.link-text {
+  color: #ffd700;
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.link-text:hover {
+  color: #ffed4a;
+}
+
+.auth-status {
+  margin-top: 15px;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  display: none;
+}
+
+.auth-status.success {
+  background: rgba(40, 167, 69, 0.3);
+  border: 1px solid rgba(40, 167, 69, 0.5);
+  color: #90ee90;
+}
+
+.auth-status.error {
+  background: rgba(220, 53, 69, 0.3);
+  border: 1px solid rgba(220, 53, 69, 0.5);
+  color: #ffb6b6;
+}
+
+.auth-status.info {
+  background: rgba(255, 193, 7, 0.3);
+  border: 1px solid rgba(255, 193, 7, 0.5);
+  color: #fff3cd;
+}
+
+/* Responsive para autenticación */
+@media (max-width: 768px) {
+  .modal-auth {
+    max-width: 95%;
+    margin: 10px;
+  }
+  
+  .modal-auth .modal-header h2 {
+    font-size: 20px;
+  }
+  
+  .auth-form h3 {
+    font-size: 18px;
+  }
+  
+  .form-group input {
+    font-size: 16px; /* Prevenir zoom en iOS */
+  }
+}
+
+/* ============== USER INFO STYLES ============== */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 8px 16px;
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 14px;
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  z-index: 1000;
+  max-width: 250px;
+}
+
+.user-info span {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logout-btn {
+  background: linear-gradient(135deg, #ff4757, #ff3742);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.logout-btn:hover {
+  background: linear-gradient(135deg, #ff3742, #ff2731);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive adjustments for user info */
+@media (max-width: 768px) {
+  .logo-container {
+    position: fixed;
+    top: 50px;
+    left: 10px;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 150px;
+  }
+  
+  .logo {
+    width: 45px;
+  }
+  
+  .app-container {
+    padding: 120px 15px 20px 15px;
+  }
+  
+  .user-info {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    right: auto;
+    margin: 0;
+    font-size: 12px;
+    padding: 6px 12px;
+    max-width: calc(100% - 40px);
+  }
+  
+  .logout-btn {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-container {
+    top: 45px;
+    left: 5px;
+    gap: 6px;
+  }
+  
+  .logo {
+    width: 40px;
+  }
+  
+  .app-container {
+    padding: 110px 10px 20px 10px;
+  }
+  
+  .user-info {
+    top: 5px;
+    font-size: 11px;
+    padding: 4px 8px;
+    gap: 8px;
+  }
+  
+  .logout-btn {
+    font-size: 9px;
+    padding: 3px 6px;
   }
 }
 

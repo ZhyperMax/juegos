@@ -17,7 +17,9 @@ const db = getDatabase(app);
 
 const colores = ["red", "blue", "green", "yellow", "orange", "purple"];
 let salaId = "";
-let userId = "user_" + Math.random().toString(36).slice(2, 10);
+let userId = null; // Se asignará después del login/registro
+let nombreUsuario = null; // Nombre del usuario autenticado
+let pinUsuario = null; // PIN del usuario (solo en memoria durante la sesión)
 let secuenciaSala = [];
 let jugadorTurno = null;
 let timerInterval = null;
@@ -64,6 +66,270 @@ function ocultarFormularios() {
 
 function mostrarBotonSalir(show = false) {
   document.getElementById("salirBtn").style.display = show ? "block" : "none";
+}
+
+// ---------------------- SISTEMA DE AUTENTICACIÓN ------------------------
+
+function mostrarAuthStatus(mensaje, tipo = 'info') {
+  const statusDiv = document.getElementById('auth-status');
+  statusDiv.textContent = mensaje;
+  statusDiv.className = `auth-status ${tipo}`;
+  statusDiv.style.display = 'block';
+  
+  // Auto-hide después de 3 segundos para mensajes de éxito
+  if (tipo === 'success') {
+    setTimeout(() => {
+      statusDiv.style.display = 'none';
+    }, 3000);
+  }
+}
+
+function validarPin(pin) {
+  return /^\d{4}$/.test(pin);
+}
+
+function validarNombre(nombre) {
+  return nombre.length >= 3 && nombre.length <= 20 && /^[a-zA-Z0-9_-]+$/.test(nombre);
+}
+
+async function verificarNombreUnico(nombre) {
+  try {
+    const usuariosRef = ref(db, 'usuarios');
+    const snapshot = await get(usuariosRef);
+    
+    if (snapshot.exists()) {
+      const usuarios = snapshot.val();
+      return !Object.values(usuarios).some(user => user.nombre.toLowerCase() === nombre.toLowerCase());
+    }
+    return true; // Si no hay usuarios, el nombre está disponible
+  } catch (error) {
+    console.error('Error verificando nombre único:', error);
+    return false;
+  }
+}
+
+async function registrarUsuario() {
+  console.log('Función registrarUsuario llamada');
+  const nombre = document.getElementById('registerNombre').value.trim();
+  const pin = document.getElementById('registerPin').value.trim();
+  const pinConfirm = document.getElementById('registerPinConfirm').value.trim();
+  
+  console.log('Datos del formulario:', { nombre, pin, pinConfirm });
+  
+  // Validaciones
+  if (!nombre) {
+    mostrarAuthStatus('Por favor ingresa un nombre de usuario', 'error');
+    return;
+  }
+  
+  if (!validarNombre(nombre)) {
+    mostrarAuthStatus('El nombre debe tener 3-20 caracteres y solo usar letras, números, _ o -', 'error');
+    return;
+  }
+  
+  if (!validarPin(pin)) {
+    mostrarAuthStatus('El PIN debe tener exactamente 4 dígitos', 'error');
+    return;
+  }
+  
+  if (pin !== pinConfirm) {
+    mostrarAuthStatus('Los PINs no coinciden', 'error');
+    return;
+  }
+  
+  mostrarAuthStatus('Verificando disponibilidad del nombre...', 'info');
+  
+  // Verificar si el nombre ya existe
+  const nombreDisponible = await verificarNombreUnico(nombre);
+  if (!nombreDisponible) {
+    mostrarAuthStatus('Este nombre ya está en uso. Elige otro.', 'error');
+    return;
+  }
+  
+  try {
+    // Generar ID único para el usuario
+    const nuevoUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    
+    // Crear usuario en Firebase
+    await set(ref(db, `usuarios/${nuevoUserId}`), {
+      nombre: nombre,
+      pin: pin, // En producción, esto debería estar hasheado
+      fechaRegistro: Date.now(),
+      ultimoAcceso: Date.now()
+    });
+    
+    // Crear perfil inicial
+    await set(ref(db, `perfiles/${nuevoUserId}`), {
+      nombre: nombre,
+      puntuacionTotal: 0,
+      partidasGanadas: 0,
+      partidasJugadas: 0
+    });
+    
+    // Guardar en localStorage
+    localStorage.setItem('usuarioAutenticado', JSON.stringify({
+      userId: nuevoUserId,
+      nombre: nombre,
+      pin: pin
+    }));
+    
+    // Establecer variables globales
+    userId = nuevoUserId;
+    nombreUsuario = nombre;
+    pinUsuario = pin;
+    
+    mostrarAuthStatus('¡Cuenta creada exitosamente!', 'success');
+    
+    // Cerrar modal después de un delay
+    setTimeout(() => {
+      cerrarModalAuth();
+      mostrarBienvenida();
+    }, 1500);
+    
+  } catch (error) {
+    console.error('Error registrando usuario:', error);
+    mostrarAuthStatus('Error al crear la cuenta. Intenta de nuevo.', 'error');
+  }
+}
+
+async function iniciarSesion() {
+  console.log('Función iniciarSesion llamada');
+  const nombre = document.getElementById('loginNombre').value.trim();
+  const pin = document.getElementById('loginPin').value.trim();
+  
+  console.log('Datos del login:', { nombre, pin });
+  
+  if (!nombre) {
+    mostrarAuthStatus('Por favor ingresa tu nombre de usuario', 'error');
+    return;
+  }
+  
+  if (!validarPin(pin)) {
+    mostrarAuthStatus('El PIN debe tener exactamente 4 dígitos', 'error');
+    return;
+  }
+  
+  mostrarAuthStatus('Verificando credenciales...', 'info');
+  
+  try {
+    // Buscar usuario en Firebase
+    const usuariosRef = ref(db, 'usuarios');
+    const snapshot = await get(usuariosRef);
+    
+    if (!snapshot.exists()) {
+      mostrarAuthStatus('No hay usuarios registrados. ¿Quieres crear una cuenta?', 'error');
+      setTimeout(() => cambiarPestanaAuth('register'), 2000);
+      return;
+    }
+    
+    const usuarios = snapshot.val();
+    let usuarioEncontrado = null;
+    let userIdEncontrado = null;
+    
+    // Buscar por nombre y PIN
+    for (const [id, userData] of Object.entries(usuarios)) {
+      if (userData.nombre.toLowerCase() === nombre.toLowerCase() && userData.pin === pin) {
+        usuarioEncontrado = userData;
+        userIdEncontrado = id;
+        break;
+      }
+    }
+    
+    if (!usuarioEncontrado) {
+      mostrarAuthStatus('Usuario no encontrado o PIN incorrecto. ¿Quieres crear una cuenta?', 'error');
+      setTimeout(() => cambiarPestanaAuth('register'), 3000);
+      return;
+    }
+    
+    // Actualizar último acceso
+    await update(ref(db, `usuarios/${userIdEncontrado}`), {
+      ultimoAcceso: Date.now()
+    });
+    
+    // Guardar en localStorage
+    localStorage.setItem('usuarioAutenticado', JSON.stringify({
+      userId: userIdEncontrado,
+      nombre: usuarioEncontrado.nombre,
+      pin: pin
+    }));
+    
+    // Establecer variables globales
+    userId = userIdEncontrado;
+    nombreUsuario = usuarioEncontrado.nombre;
+    pinUsuario = pin;
+    
+    mostrarAuthStatus('¡Bienvenido de vuelta!', 'success');
+    
+    // Cerrar modal después de un delay
+    setTimeout(() => {
+      cerrarModalAuth();
+      mostrarBienvenida();
+    }, 1500);
+    
+  } catch (error) {
+    console.error('Error al iniciar sesión:', error);
+    mostrarAuthStatus('Error al conectar. Intenta de nuevo.', 'error');
+  }
+}
+
+function cerrarModalAuth() {
+  const modal = document.getElementById('authModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  document.body.style.overflow = 'auto';
+}
+
+function cambiarPestanaAuth(pestana) {
+  // Remover clase active de todos los botones y contenidos
+  document.querySelectorAll('.auth-tabs .tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.auth-tab-content').forEach(content => content.classList.remove('active'));
+  
+  // Activar el botón y contenido correspondiente
+  const botonActivo = document.querySelector(`.auth-tabs .tab-btn:nth-child(${pestana === 'login' ? '1' : '2'})`);
+  const contenidoActivo = document.getElementById(`auth-${pestana}`);
+  
+  if (botonActivo) botonActivo.classList.add('active');
+  if (contenidoActivo) contenidoActivo.classList.add('active');
+  
+  // Limpiar mensajes de estado
+  const statusDiv = document.getElementById('auth-status');
+  if (statusDiv) {
+    statusDiv.style.display = 'none';
+  }
+}
+
+async function verificarSesionExistente() {
+  const savedUserId = localStorage.getItem('userId');
+  const savedNombre = localStorage.getItem('nombreUsuario');
+  
+  if (savedUserId && savedNombre) {
+    try {
+      // Verificar que el usuario aún existe en Firebase
+      const userSnap = await get(ref(db, `usuarios/${savedUserId}`));
+      
+      if (userSnap.exists()) {
+        // Usuario válido, restaurar sesión
+        userId = savedUserId;
+        nombreUsuario = savedNombre;
+        
+        // Actualizar último acceso
+        await update(ref(db, `usuarios/${savedUserId}`), {
+          ultimoAcceso: Date.now()
+        });
+        
+        return true;
+      } else {
+        // Usuario no existe, limpiar localStorage
+        localStorage.removeItem('userId');
+        localStorage.removeItem('nombreUsuario');
+      }
+    } catch (error) {
+      console.error('Error verificando sesión:', error);
+    }
+  }
+  
+  return false;
 }
 
 function crearContadorIntentosSupeior() {
@@ -235,8 +501,10 @@ async function actualizarPuntuacionDisplay() {
 // ---------------------- CREAR / UNIR SALA ------------------------
 
 async function crearSala() {
-  const nombre = document.getElementById("nombreCrear").value.trim();
-  if (!nombre) return mostrarEstado("Ingresá tu nombre", "red");
+  if (!userId || !nombreUsuario) {
+    mostrarEstado("Error: Usuario no autenticado", "red");
+    return;
+  }
 
   // Obtener el modo de juego seleccionado
   const modoJuego = document.querySelector('input[name="modoJuego"]:checked').value;
@@ -248,7 +516,7 @@ async function crearSala() {
   await set(ref(db, "salas/" + salaId), {
     secuencia: secuenciaSala,
     jugadores: {
-      [userId]: { nombre, intentosCount: 0, intentos: {} }
+      [userId]: { nombre: nombreUsuario, intentosCount: 0, intentos: {} }
     },
     turno: userId,
     estadoJuego: modoJuego === "solo" ? "jugando" : "esperando",
@@ -257,17 +525,21 @@ async function crearSala() {
   });
 
   mostrarEstado("Sala creada: " + salaId, "green");
-  await iniciarJuego(nombre);
+  await iniciarJuego(nombreUsuario);
   ocultarFormularios();
   mostrarBotonSalir(true);
   actualizarListaSalas();
 }
 
 async function unirseSala() {
-  const nombre = document.getElementById("nombreUnir").value.trim();
+  if (!userId || !nombreUsuario) {
+    mostrarEstado("Error: Usuario no autenticado", "red");
+    return;
+  }
+
   const codigo = document.getElementById("codigoUnir").value.trim().toUpperCase();
 
-  if (!nombre || !codigo) return mostrarEstado("Completá todos los campos", "red");
+  if (!codigo) return mostrarEstado("Ingresa el código de sala", "red");
 
   salaId = codigo;
   const salaSnap = await get(ref(db, "salas/" + salaId));
@@ -281,10 +553,10 @@ async function unirseSala() {
   if (modoJuego === "solo") return mostrarEstado("Esta sala es solo para un jugador", "red");
   if (Object.keys(jugadores).length >= maxJugadores) return mostrarEstado("Sala llena", "red");
 
-  await set(ref(db, `salas/${salaId}/jugadores/${userId}`), { nombre, intentosCount: 0, intentos: {} });
+  await set(ref(db, `salas/${salaId}/jugadores/${userId}`), { nombre: nombreUsuario, intentosCount: 0, intentos: {} });
 
   mostrarEstado("Unido a sala " + salaId);
-  await iniciarJuego(nombre);
+  await iniciarJuego(nombreUsuario);
   ocultarFormularios();
   mostrarBotonSalir(true);
   actualizarListaSalas();
@@ -1891,6 +2163,48 @@ function cerrarModalRanking() {
   document.body.style.overflow = "auto";
 }
 
+function mostrarBienvenida() {
+  mostrarEstado(`¡Bienvenido de vuelta, ${nombreUsuario}!`, "green");
+  // Mostrar información del usuario autenticado en la interfaz si es necesario
+  const userDisplay = document.getElementById('userDisplay');
+  if (userDisplay) {
+    userDisplay.style.display = 'block';
+    const currentUserName = document.getElementById('currentUserName');
+    if (currentUserName) {
+      currentUserName.textContent = nombreUsuario;
+    }
+  }
+}
+
+function cerrarSesion() {
+  // Limpiar datos del usuario
+  userId = null;
+  nombreUsuario = null;
+  pinUsuario = null;
+  
+  // Limpiar localStorage
+  localStorage.removeItem('usuarioAutenticado');
+  
+  // Mostrar modal de autenticación
+  document.getElementById('authModal').style.display = 'flex';
+  const userDisplay = document.getElementById('userDisplay');
+  if (userDisplay) {
+    userDisplay.style.display = 'none';
+  }
+  
+  // Limpiar formularios
+  const elementos = ['loginNombre', 'loginPin', 'registerNombre', 'registerPin', 'registerConfirmPin'];
+  elementos.forEach(id => {
+    const elemento = document.getElementById(id);
+    if (elemento) elemento.value = '';
+  });
+  
+  // Cambiar a pestaña de login
+  cambiarPestanaAuth('login');
+  
+  mostrarEstado("Sesión cerrada correctamente", "blue");
+}
+
 function mostrarTabRanking(tab, element) {
   // Cambiar pestañas activas
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -2075,10 +2389,36 @@ window.onload = () => {
   mostrarEstado("Listo para jugar", "green");
 };
 
+// Inicialización de la página
+document.addEventListener('DOMContentLoaded', function() {
+  // Verificar si hay un usuario autenticado en localStorage
+  const usuarioGuardado = localStorage.getItem('usuarioAutenticado');
+  if (usuarioGuardado) {
+    const datosUsuario = JSON.parse(usuarioGuardado);
+    userId = datosUsuario.userId;
+    nombreUsuario = datosUsuario.nombre;
+    pinUsuario = datosUsuario.pin;
+    
+    // Ocultar modal de autenticación y mostrar interfaz principal
+    document.getElementById('authModal').style.display = 'none';
+    mostrarBienvenida();
+  } else {
+    // Mostrar modal de autenticación
+    document.getElementById('authModal').style.display = 'flex';
+  }
+});
+
 // Cerrar modal con tecla Escape
 document.addEventListener("keydown", function(event) {
   if (event.key === "Escape") {
     cerrarModalInfo();
     cerrarModalRanking();
+    cerrarModalAuth();
   }
 });
+
+// Exponer funciones globalmente
+window.registrarUsuario = registrarUsuario;
+window.iniciarSesion = iniciarSesion;
+window.cambiarPestanaAuth = cambiarPestanaAuth;
+window.cerrarSesion = cerrarSesion;

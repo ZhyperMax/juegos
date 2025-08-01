@@ -12,6 +12,12 @@
 </head>
 <body>
 
+<!-- Información del usuario -->
+<div id="userDisplay" style="display: none;" class="user-info">
+    <span>Usuario: <strong id="currentUserName"></strong></span>
+    <button onclick="cerrarSesion()" class="logout-btn">Cerrar Sesión</button>
+</div>
+
 <div class="logo-container">
     <img src="img/logo.png" alt="Logo" class="logo" />
     <button id="infoBtn" class="btn-info" onclick="mostrarInfoJuego()">
@@ -25,50 +31,33 @@
 </div>
 
 <div class="app-container">
-
-    <div id="formulario">
-        <div id="crear" class="form-section">
-            <h2>Crear Sala</h2>
-            <input type="text" id="nombreCrear" placeholder="Tu nombre" /><br/><br/>
-            
-            <div class="modo-juego-selector">
-                <h4>Modo de juego:</h4>
-                <div class="radio-group">
-                    <label class="radio-option">
-                        <input type="radio" name="modoJuego" value="solo" checked>
-                        <span class="radio-custom"></span>
-                        Un jugador (solo)
-                    </label>
-                    <label class="radio-option">
-                        <input type="radio" name="modoJuego" value="dos">
-                        <span class="radio-custom"></span>
-                        Dos jugadores
-                    </label>
-                </div>
-            </div>
-            
-            <button class="btn btn-primary" onclick="crearSala()">Crear Sala</button>
-        </div>
-
-        <hr />
-
-        <div id="unirse" class="form-section">
-            <h2>Unirse a Sala</h2>
-            <input type="text" id="nombreUnir" placeholder="Tu nombre" /><br/><br/>
-            <input type="text" id="codigoUnir" placeholder="Código de sala" maxlength="5" style="text-transform: uppercase;" /><br/><br/>
-            <button class="btn btn-success" onclick="unirseSala()">Unirse a Sala</button>
-        </div>
-
-        <hr />
-
-        <div id="listaSalas" class="form-section">
-            <h2>Salas disponibles</h2>
-            <input type="text" id="nombreLista" placeholder="Tu nombre" /><br/><br/>
-            <div id="contenedorSalas">Cargando salas...</div>
-        </div>
-
-        <p id="estadoApp"></p>
+  <div id="formulario">
+    <div id="formularioCrear" class="formulario">
+      <h3>Crear Sala</h3>
+      <label>
+        <input type="radio" name="modoJuego" value="solo" checked> Solo
+      </label>
+      <label>
+        <input type="radio" name="modoJuego" value="dos"> Multijugador
+      </label>
+      <button onclick="crearSala()">Crear Sala</button>
     </div>
+
+    <div id="formularioUnir" class="formulario">
+      <h3>Unirse a Sala</h3>
+      <input type="text" id="codigoUnir" placeholder="Código de sala">
+      <button onclick="unirseSala()">Unirse</button>
+    </div>
+
+    <hr />
+
+    <div id="listaSalas" class="form-section">
+      <h2>Salas disponibles</h2>
+      <div id="contenedorSalas">Cargando salas...</div>
+    </div>
+
+    <p id="estadoApp"></p>
+  </div>
 
     <div id="juego">
         <div class="game-header">
@@ -96,6 +85,64 @@
         </div>
 
         <button id="salirBtn" class="btn btn-danger" onclick="salirDeSala()">Salir de la sala</button>
+    </div>
+</div>
+
+<!-- Modal de Autenticación -->
+<div id="authModal" class="modal-overlay modal-auth-overlay">
+    <div class="modal-content modal-auth">
+        <div class="modal-header">
+            <h2>🎮 Bienvenido a Adivina Colores</h2>
+        </div>
+        
+        <div class="modal-body">
+            <div class="auth-tabs">
+                <button class="tab-btn active" onclick="cambiarPestanaAuth('login')">🔑 Entrar</button>
+                <button class="tab-btn" onclick="cambiarPestanaAuth('register')">📝 Registrarse</button>
+            </div>
+            
+            <!-- Tab de Login -->
+            <div id="auth-login" class="auth-tab-content active">
+                <div class="auth-form">
+                    <h3>¡Bienvenido de vuelta!</h3>
+                    <div class="form-group">
+                        <label for="loginNombre">👤 Nombre de usuario:</label>
+                        <input type="text" id="loginNombre" placeholder="Tu nombre de usuario" maxlength="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPin">🔐 PIN:</label>
+                        <input type="password" id="loginPin" placeholder="Tu PIN (4 dígitos)" maxlength="4" pattern="[0-9]{4}">
+                    </div>
+                    <button class="btn btn-primary auth-btn" onclick="iniciarSesion()">🚀 Entrar</button>
+                    <p class="auth-help">¿No tienes cuenta? <span onclick="cambiarPestanaAuth('register')" class="link-text">Regístrate aquí</span></p>
+                </div>
+            </div>
+            
+            <!-- Tab de Registro -->
+            <div id="auth-register" class="auth-tab-content">
+                <div class="auth-form">
+                    <h3>¡Crea tu cuenta!</h3>
+                    <div class="form-group">
+                        <label for="registerNombre">👤 Nombre de usuario:</label>
+                        <input type="text" id="registerNombre" placeholder="Elige tu nombre único" maxlength="20">
+                        <small class="form-help">Este será tu nombre en el ranking</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPin">🔐 PIN:</label>
+                        <input type="password" id="registerPin" placeholder="Crea un PIN de 4 dígitos" maxlength="4" pattern="[0-9]{4}">
+                        <small class="form-help">Recuerda este PIN para acceder después</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPinConfirm">🔐 Confirmar PIN:</label>
+                        <input type="password" id="registerPinConfirm" placeholder="Repite tu PIN" maxlength="4" pattern="[0-9]{4}">
+                    </div>
+                    <button class="btn btn-success auth-btn" onclick="registrarUsuario()">✨ Crear Cuenta</button>
+                    <p class="auth-help">¿Ya tienes cuenta? <span onclick="cambiarPestanaAuth('login')" class="link-text">Inicia sesión aquí</span></p>
+                </div>
+            </div>
+            
+            <div id="auth-status" class="auth-status"></div>
+        </div>
     </div>
 </div>
 

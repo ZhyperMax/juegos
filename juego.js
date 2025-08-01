@@ -544,8 +544,8 @@ function mostrarCombinacionCorrecta() {
       if (snap.exists()) {
         secuenciaSala = snap.val();
         console.log("Secuencia obtenida de Firebase:", secuenciaSala);
-        // Llamar recursivamente con la secuencia correcta
-        mostrarCombinacionCorrectaConSecuencia(secuenciaSala);
+        // Llamar con la secuencia correcta
+        mostrarColoresRespaldo(secuenciaSala);
       } else {
         console.error("No se pudo obtener la secuencia de Firebase");
       }
@@ -553,217 +553,77 @@ function mostrarCombinacionCorrecta() {
     return;
   }
   
-  mostrarCombinacionCorrectaConSecuencia(secuenciaSala);
+  mostrarColoresRespaldo(secuenciaSala);
 }
 
-function mostrarCombinacionCorrectaConSecuencia(secuencia) {
-  console.log("Mostrando combinación con secuencia:", secuencia);
-  
-  // Crear un contenedor para mostrar la combinación correcta
+function mostrarColoresRespaldo(secuencia) {
+  console.log("Creando colores de respaldo garantizados...");
   const historial = document.getElementById("historial");
   
-  // Agregar el mensaje y la secuencia correcta al historial
-  const mensajeDiv = document.createElement("div");
-  mensajeDiv.className = "mensaje-derrota";
-  
-  // Crear título con emoji
-  const titulo = document.createElement("h3");
-  titulo.innerHTML = "💔 ¡No adivinaste la combinación!";
-  mensajeDiv.appendChild(titulo);
-  
-  // Crear subtítulo más atractivo
-  const subtitulo = document.createElement("p");
-  subtitulo.innerHTML = "🎯 La combinación correcta era:";
-  mensajeDiv.appendChild(subtitulo);
-  
-  // Crear contenedor para los colores con título
-  const seccionColores = document.createElement("div");
-  seccionColores.style.cssText = `
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 15px;
-    margin-top: 15px;
-    backdrop-filter: blur(5px);
-  `;
-  
-  const tituloColores = document.createElement("p");
-  tituloColores.innerHTML = "🌈 Secuencia correcta:";
-  tituloColores.style.cssText = `
-    margin: 0 0 12px 0 !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    color: rgba(255, 255, 255, 0.9) !important;
-  `;
-  seccionColores.appendChild(tituloColores);
-  
-  const coloresContainer = document.createElement("div");
-  coloresContainer.className = "colores-correctos";
-  coloresContainer.style.cssText = `
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  `;
-  
-  // Mostrar cada color de la secuencia correcta con animación
-  if (secuencia && secuencia.length > 0) {
-    secuencia.forEach((color, index) => {
-      console.log(`Creando color ${index + 1}: ${color}`);
-      
-      const colorBox = document.createElement("div");
-      colorBox.className = "color-correcto";
-      
-      // Usar estilos inline más fuertes para garantizar visibilidad
-      colorBox.style.width = "60px";
-      colorBox.style.height = "60px";
-      colorBox.style.backgroundColor = color;
-      colorBox.style.border = "3px solid rgba(255, 255, 255, 0.8)";
-      colorBox.style.borderRadius = "12px";
-      colorBox.style.margin = "5px";
-      colorBox.style.display = "inline-block";
-      colorBox.style.position = "relative";
-      colorBox.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.3)";
-      colorBox.style.animation = `colorAparece 0.6s ease-out forwards`;
-      colorBox.style.animationDelay = `${index * 0.2}s`;
-      colorBox.style.opacity = "0";
-      colorBox.style.transform = "scale(0.5)";
-      
-      // Agregar tooltip con el nombre del color
-      const nombreColor = obtenerNombreColor(color);
-      colorBox.title = nombreColor;
-      
-      // Agregar número de posición
-      const numeroPos = document.createElement("div");
-      numeroPos.textContent = index + 1;
-      numeroPos.style.cssText = `
-        position: absolute;
-        top: -8px;
-        right: -8px;
-        background: white;
-        color: #333;
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        font-weight: bold;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      `;
-      
-      // Agregar nombre del color debajo
-      const nombreDiv = document.createElement("div");
-      nombreDiv.textContent = nombreColor;
-      nombreDiv.style.cssText = `
-        position: absolute;
-        bottom: -25px;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 10px;
-        color: rgba(255, 255, 255, 0.8);
-        font-weight: 600;
-        text-align: center;
-        white-space: nowrap;
-      `;
-      
-      colorBox.appendChild(numeroPos);
-      colorBox.appendChild(nombreDiv);
-      coloresContainer.appendChild(colorBox);
-      
-      // Debug: forzar que el color sea visible después de un tiempo
-      setTimeout(() => {
-        colorBox.style.opacity = "1";
-        colorBox.style.transform = "scale(1)";
-        console.log(`Color ${index + 1} (${color}) forzado a visible`);
-      }, (index * 200) + 600);
-    });
-  } else {
-    console.error("Error: secuencia está vacía o no es válida");
-    const errorMsg = document.createElement("p");
-    errorMsg.textContent = "Error al cargar la secuencia correcta";
-    errorMsg.style.color = "red";
-    coloresContainer.appendChild(errorMsg);
-  }
-  
-  seccionColores.appendChild(coloresContainer);
-  mensajeDiv.appendChild(seccionColores);
-  
-  console.log("Elementos creados:", {
-    coloresContainer: coloresContainer,
-    childrenCount: coloresContainer.children.length,
-    mensajeDiv: mensajeDiv
-  });
-  
-  // Agregar mensaje motivacional
-  const mensajeMotivacional = document.createElement("p");
-  mensajeMotivacional.innerHTML = "💪 ¡Inténtalo de nuevo en una nueva partida!";
-  mensajeMotivacional.style.cssText = `
-    margin: 15px 0 0 0 !important;
-    font-size: 14px !important;
-    opacity: 0.8 !important;
-    font-style: italic !important;
-  `;
-  mensajeDiv.appendChild(mensajeMotivacional);
-  
-  // Insertar al principio del historial para que sea bien visible
-  historial.insertBefore(mensajeDiv, historial.firstChild);
-  
-  console.log("Mensaje insertado en historial. Verificando elementos:");
-  console.log("Historial children:", historial.children.length);
-  console.log("Primer hijo:", historial.firstChild);
-  
-  // Método alternativo: crear colores simples sin animación
-  setTimeout(() => {
-    // Solo crear respaldo si los colores principales no son visibles
-    const coloresExistentes = coloresContainer.querySelectorAll('.color-correcto');
-    let algunoVisible = false;
-    
-    coloresExistentes.forEach(color => {
-      if (color.style.opacity === "1" || parseFloat(window.getComputedStyle(color).opacity) > 0.5) {
-        algunoVisible = true;
-      }
-    });
-    
-    if (!algunoVisible) {
-      console.log("Creando colores de respaldo...");
-      const respaldo = document.createElement("div");
-      respaldo.innerHTML = `
-        <p style="color: #333; font-weight: bold; margin: 10px 0;">🎯 Combinación correcta (respaldo):</p>
-        <div style="display: flex; gap: 10px; justify-content: center; margin: 10px 0;">
-          ${secuencia.map((color, i) => `
+  const respaldo = document.createElement("div");
+  respaldo.innerHTML = `
+    <div style="
+      background: rgba(255, 255, 255, 0.95);
+      border: 3px solid #333;
+      border-radius: 15px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    ">
+      <h3 style="color: #333; margin: 0 0 15px 0; font-size: 18px;">💔 ¡No adivinaste la combinación!</h3>
+      <p style="color: #333; margin: 0 0 15px 0; font-weight: bold;">🎯 La combinación correcta era:</p>
+      <div style="display: flex; gap: 15px; justify-content: center; margin: 15px 0; flex-wrap: wrap;">
+        ${secuencia.map((color, i) => `
+          <div style="
+            width: 60px; 
+            height: 60px; 
+            background-color: ${color}; 
+            border: 3px solid #333;
+            border-radius: 12px;
+            display: inline-block;
+            position: relative;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+          " title="${obtenerNombreColor(color)}">
             <div style="
-              width: 50px; 
-              height: 50px; 
-              background-color: ${color}; 
+              position: absolute;
+              top: -8px;
+              right: -8px;
+              background: white;
+              color: #333;
+              border-radius: 50%;
+              width: 20px;
+              height: 20px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 12px;
+              font-weight: bold;
               border: 2px solid #333;
-              border-radius: 8px;
-              display: inline-block;
-            " title="${obtenerNombreColor(color)}"></div>
-          `).join('')}
-        </div>
-      `;
-      respaldo.style.cssText = `
-        background: rgba(255, 255, 255, 0.9);
-        border: 2px solid #333;
-        border-radius: 8px;
-        padding: 15px;
-        margin: 10px 0;
-        text-align: center;
-      `;
-      historial.insertBefore(respaldo, historial.firstChild);
-      console.log("Colores de respaldo creados");
-    } else {
-      console.log("Colores principales visibles, respaldo no necesario");
-    }
-  }, 1500);
+            ">${i + 1}</div>
+            <div style="
+              position: absolute;
+              bottom: -25px;
+              left: 50%;
+              transform: translateX(-50%);
+              font-size: 10px;
+              color: #333;
+              font-weight: bold;
+              text-align: center;
+              white-space: nowrap;
+            ">${obtenerNombreColor(color)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <p style="color: #333; margin: 15px 0 0 0; font-size: 14px; font-style: italic;">💪 ¡Inténtalo de nuevo en una nueva partida!</p>
+    </div>
+  `;
+  
+  historial.insertBefore(respaldo, historial.firstChild);
+  console.log("Colores de respaldo creados exitosamente");
   
   // Deshabilitar el botón de enviar intento
   document.querySelector("button[onclick='enviarIntento()']").disabled = true;
-  
-  // Agregar sonido de derrota (opcional)
-  reproducirSonidoDerrota();
   
   // Mostrar botón de revancha después de un breve delay
   setTimeout(() => {
@@ -1616,6 +1476,9 @@ async function iniciarNuevaPartida() {
   
   // Habilitar botón de enviar intento
   document.querySelector("button[onclick='enviarIntento()']").disabled = true; // Se habilitará cuando sea el turno
+  
+  // Asegurar que se active la escucha del turno
+  escucharTurno();
   
   mostrarEstado("🚀 ¡Nueva partida en curso! ¡Buena suerte!");
 }

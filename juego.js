@@ -263,9 +263,18 @@ function iniciarJuego(nombreJugador) {
   mostrarJugadoresEnSala();
   escucharChat();
   escucharJugadoresYActivarJuego(); 
+  escucharSecuencia(); // Añadir listener para la secuencia
 
+  // Obtener la secuencia de la sala y asegurar que esté disponible
   get(ref(db, `salas/${salaId}/secuencia`)).then(snap => {
-    if (snap.exists()) secuenciaSala = snap.val();
+    if (snap.exists()) {
+      secuenciaSala = snap.val();
+      console.log("Secuencia cargada al iniciar juego:", secuenciaSala);
+    } else {
+      console.error("No se encontró secuencia en la sala");
+    }
+  }).catch(error => {
+    console.error("Error al cargar secuencia:", error);
   });
 
   onDisconnect(ref(db, `salas/${salaId}/jugadores/${userId}`)).remove();
@@ -291,6 +300,15 @@ function escucharJugadoresYActivarJuego() {
       await update(ref(db, `salas/${salaId}`), { estadoJuego: "jugando" });
       const primerJugadorId = Object.keys(jugadores)[0];
       await update(ref(db, `salas/${salaId}`), { turno: primerJugadorId });
+    }
+  });
+}
+
+function escucharSecuencia() {
+  onValue(ref(db, `salas/${salaId}/secuencia`), snap => {
+    if (snap.exists()) {
+      secuenciaSala = snap.val();
+      console.log("Secuencia actualizada:", secuenciaSala);
     }
   });
 }
@@ -516,6 +534,31 @@ function mostrarCombinacionCorrecta() {
   mostrarEstado("No adivinaste el color, perdiste", "red");
   juegoTerminado = true;
   
+  console.log("Mostrando combinación correcta. Secuencia:", secuenciaSala);
+  
+  // Verificar que tengamos la secuencia
+  if (!secuenciaSala || secuenciaSala.length === 0) {
+    console.error("Error: secuenciaSala está vacía o no definida");
+    // Intentar obtener la secuencia de Firebase
+    get(ref(db, `salas/${salaId}/secuencia`)).then(snap => {
+      if (snap.exists()) {
+        secuenciaSala = snap.val();
+        console.log("Secuencia obtenida de Firebase:", secuenciaSala);
+        // Llamar recursivamente con la secuencia correcta
+        mostrarCombinacionCorrectaConSecuencia(secuenciaSala);
+      } else {
+        console.error("No se pudo obtener la secuencia de Firebase");
+      }
+    });
+    return;
+  }
+  
+  mostrarCombinacionCorrectaConSecuencia(secuenciaSala);
+}
+
+function mostrarCombinacionCorrectaConSecuencia(secuencia) {
+  console.log("Mostrando combinación con secuencia:", secuencia);
+  
   // Crear un contenedor para mostrar la combinación correcta
   const historial = document.getElementById("historial");
   
@@ -555,53 +598,103 @@ function mostrarCombinacionCorrecta() {
   
   const coloresContainer = document.createElement("div");
   coloresContainer.className = "colores-correctos";
+  coloresContainer.style.cssText = `
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  `;
   
   // Mostrar cada color de la secuencia correcta con animación
-  secuenciaSala.forEach((color, index) => {
-    const colorBox = document.createElement("div");
-    colorBox.className = "color-correcto";
-    colorBox.style.cssText = `
-      width: 50px;
-      height: 50px;
-      background-color: ${color} !important;
-      border: 3px solid rgba(255, 255, 255, 0.8) !important;
-      border-radius: 12px !important;
-      margin: 0 5px !important;
-      display: inline-block !important;
-      position: relative !important;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
-    `;
-    
-    // Agregar tooltip con el nombre del color
-    const nombreColor = obtenerNombreColor(color);
-    colorBox.title = nombreColor;
-    
-    // Agregar número de posición
-    const numeroPos = document.createElement("div");
-    numeroPos.textContent = index + 1;
-    numeroPos.style.cssText = `
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      background: white;
-      color: #333;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: bold;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    `;
-    
-    colorBox.appendChild(numeroPos);
-    coloresContainer.appendChild(colorBox);
-  });
+  if (secuencia && secuencia.length > 0) {
+    secuencia.forEach((color, index) => {
+      console.log(`Creando color ${index + 1}: ${color}`);
+      
+      const colorBox = document.createElement("div");
+      colorBox.className = "color-correcto";
+      
+      // Usar estilos inline más fuertes para garantizar visibilidad
+      colorBox.style.width = "60px";
+      colorBox.style.height = "60px";
+      colorBox.style.backgroundColor = color;
+      colorBox.style.border = "3px solid rgba(255, 255, 255, 0.8)";
+      colorBox.style.borderRadius = "12px";
+      colorBox.style.margin = "5px";
+      colorBox.style.display = "inline-block";
+      colorBox.style.position = "relative";
+      colorBox.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.3)";
+      colorBox.style.animation = `colorAparece 0.6s ease-out forwards`;
+      colorBox.style.animationDelay = `${index * 0.2}s`;
+      colorBox.style.opacity = "0";
+      colorBox.style.transform = "scale(0.5)";
+      
+      // Agregar tooltip con el nombre del color
+      const nombreColor = obtenerNombreColor(color);
+      colorBox.title = nombreColor;
+      
+      // Agregar número de posición
+      const numeroPos = document.createElement("div");
+      numeroPos.textContent = index + 1;
+      numeroPos.style.cssText = `
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: white;
+        color: #333;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      `;
+      
+      // Agregar nombre del color debajo
+      const nombreDiv = document.createElement("div");
+      nombreDiv.textContent = nombreColor;
+      nombreDiv.style.cssText = `
+        position: absolute;
+        bottom: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 600;
+        text-align: center;
+        white-space: nowrap;
+      `;
+      
+      colorBox.appendChild(numeroPos);
+      colorBox.appendChild(nombreDiv);
+      coloresContainer.appendChild(colorBox);
+      
+      // Debug: forzar que el color sea visible después de un tiempo
+      setTimeout(() => {
+        colorBox.style.opacity = "1";
+        colorBox.style.transform = "scale(1)";
+        console.log(`Color ${index + 1} (${color}) forzado a visible`);
+      }, (index * 200) + 600);
+    });
+  } else {
+    console.error("Error: secuencia está vacía o no es válida");
+    const errorMsg = document.createElement("p");
+    errorMsg.textContent = "Error al cargar la secuencia correcta";
+    errorMsg.style.color = "red";
+    coloresContainer.appendChild(errorMsg);
+  }
   
   seccionColores.appendChild(coloresContainer);
   mensajeDiv.appendChild(seccionColores);
+  
+  console.log("Elementos creados:", {
+    coloresContainer: coloresContainer,
+    childrenCount: coloresContainer.children.length,
+    mensajeDiv: mensajeDiv
+  });
   
   // Agregar mensaje motivacional
   const mensajeMotivacional = document.createElement("p");
@@ -616,6 +709,55 @@ function mostrarCombinacionCorrecta() {
   
   // Insertar al principio del historial para que sea bien visible
   historial.insertBefore(mensajeDiv, historial.firstChild);
+  
+  console.log("Mensaje insertado en historial. Verificando elementos:");
+  console.log("Historial children:", historial.children.length);
+  console.log("Primer hijo:", historial.firstChild);
+  
+  // Método alternativo: crear colores simples sin animación
+  setTimeout(() => {
+    // Solo crear respaldo si los colores principales no son visibles
+    const coloresExistentes = coloresContainer.querySelectorAll('.color-correcto');
+    let algunoVisible = false;
+    
+    coloresExistentes.forEach(color => {
+      if (color.style.opacity === "1" || parseFloat(window.getComputedStyle(color).opacity) > 0.5) {
+        algunoVisible = true;
+      }
+    });
+    
+    if (!algunoVisible) {
+      console.log("Creando colores de respaldo...");
+      const respaldo = document.createElement("div");
+      respaldo.innerHTML = `
+        <p style="color: #333; font-weight: bold; margin: 10px 0;">🎯 Combinación correcta (respaldo):</p>
+        <div style="display: flex; gap: 10px; justify-content: center; margin: 10px 0;">
+          ${secuencia.map((color, i) => `
+            <div style="
+              width: 50px; 
+              height: 50px; 
+              background-color: ${color}; 
+              border: 2px solid #333;
+              border-radius: 8px;
+              display: inline-block;
+            " title="${obtenerNombreColor(color)}"></div>
+          `).join('')}
+        </div>
+      `;
+      respaldo.style.cssText = `
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid #333;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        text-align: center;
+      `;
+      historial.insertBefore(respaldo, historial.firstChild);
+      console.log("Colores de respaldo creados");
+    } else {
+      console.log("Colores principales visibles, respaldo no necesario");
+    }
+  }, 1500);
   
   // Deshabilitar el botón de enviar intento
   document.querySelector("button[onclick='enviarIntento()']").disabled = true;

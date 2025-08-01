@@ -48,6 +48,21 @@ Un juego interactivo multijugador donde debes adivinar la secuencia correcta de 
 
 ### 🏆 Sistema de Retroalimentación
 
+#### 🏅 Sistema de Puntuación Integral
+- **Puntuación Base**: 1000 puntos por victoria
+- **Bonus por Precisión**: Hasta 500 puntos adicionales (menos puntos por cada intento extra)
+- **Bonus por Velocidad**: Hasta 300 puntos adicionales (basado en tiempo de resolución)
+- **Bonus Perfecto**: 200 puntos extra por ganar en el primer intento en menos de 15 segundos
+- **Acumulación**: Puntuación total persistente a través de Firebase
+- **Display en tiempo real**: Contador visible durante el juego
+
+#### 📊 Ranking y Estadísticas
+- **Ranking Global**: Top 50 jugadores por puntuación total
+- **Podio visual**: Destacado especial para Top 3 (oro, plata, bronce)
+- **Estadísticas personales**: Puntuación total, partidas ganadas, tasa de victoria
+- **Historial detallado**: Últimas 20 partidas con puntuación y detalles
+- **Comparación**: Resaltado del jugador actual en el ranking
+
 #### 📈 Indicadores de Progreso
 - **✓ Posiciones correctas**: Colores en la posición exacta
 - **⚬ Colores correctos**: Colores presentes pero mal ubicados
@@ -176,6 +191,8 @@ Un juego interactivo multijugador donde debes adivinar la secuencia correcta de 
 - **Firebase Realtime Database**: Sincronización en tiempo real
 - **Firebase SDK v10**: Última versión estable
 - **Persistencia offline**: Funciona sin conexión temporal
+- **Sistema de puntuación**: Almacenamiento de scores y estadísticas
+- **Perfiles de jugador**: Datos persistentes por usuario
 
 ### APIs Web
 - **Web Audio API**: Generación de sonidos dinámicos
@@ -257,13 +274,18 @@ Adivinar la secuencia secreta de 4 colores únicos en máximo 10 intentos.
 - ✅ Deselección fácil de colores
 - ✅ Indicadores visuales de progreso
 - ✅ **Botón de información del juego con modal interactivo**
+- ✅ **Display de puntuación en tiempo real**
+- ✅ **Botón de ranking con acceso a estadísticas**
 
-**🏆 Fin de Juego**
+**🏆 Fin de Juego y Puntuación**
 - ✅ Mensajes de victoria con confeti y sonido
 - ✅ Mensajes de derrota con secuencia correcta
 - ✅ Colores mostrados con números de posición
 - ✅ Efectos de sonido para ambos casos
 - ✅ **Sistema de revancha/volver a jugar con votación**
+- ✅ **Cálculo automático de puntuación basado en performance**
+- ✅ **Desglose detallado de puntos obtenidos**
+- ✅ **Actualización de estadísticas personales**
 
 **🌐 Multijugador**
 - ✅ Creación y unión a salas
@@ -296,12 +318,12 @@ Adivinar la secuencia secreta de 4 colores únicos en máximo 10 intentos.
 ## 🚧 Roadmap de Futuras Actualizaciones
 
 ### 📋 Próximas Características
-- [ ] **Sistema de puntuación**: Puntos basados en intentos y tiempo
-- [ ] **Ranking global**: Tabla de mejores jugadores
+- [x] **Sistema de puntuación**: ✅ Puntos basados en intentos y tiempo
+- [x] **Ranking global**: ✅ Tabla de mejores jugadores
 - [ ] **Dificultades**: Fácil (3 colores), Normal (4), Difícil (5)
 - [ ] **Salas privadas**: Contraseñas para salas exclusivas
 - [ ] **Espectadores**: Modo observador sin participar
-- [ ] **Estadísticas**: Historial de partidas y porcentaje de victoria
+- [ ] **Logros**: Sistema de achievements por performance
 
 ### 🎮 Mejoras de Gameplay
 - [ ] **Modo torneo**: Eliminación entre múltiples jugadores

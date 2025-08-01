@@ -25,6 +25,8 @@ let tiempoRestante = 15;
 let jugadoresEnSala = {}; // Variable local para almacenar la información de los jugadores
 let ordenSeleccion = []; // Array para mantener el orden de selección de colores
 let juegoTerminado = false; // Flag para controlar el estado del juego
+let inicioPartida = null; // Timestamp de inicio de la partida para calcular tiempo
+let puntuacionJugador = 0; // Puntuación actual del jugador
 
 // ---------------------- FUNCIONES BÁSICAS ------------------------
 
@@ -134,8 +136,25 @@ function crearContadorIntentosSupeior() {
   `;
   intentosRestantes.textContent = "10 restantes";
 
+  // Puntuación del jugador
+  const puntuacionContainer = document.createElement("div");
+  puntuacionContainer.id = "puntuacion-display";
+  puntuacionContainer.style.cssText = `
+    background: rgba(255, 215, 0, 0.2);
+    padding: 8px 15px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+  `;
+  puntuacionContainer.innerHTML = `🏆 <span id="puntuacion-valor">0</span> pts`;
+
   contadorContainer.appendChild(infoJugador);
   contadorContainer.appendChild(contadorIntentos);
+  contadorContainer.appendChild(puntuacionContainer);
   contadorContainer.appendChild(intentosRestantes);
 
   // Insertar después del header del juego y antes de la instrucción
@@ -183,6 +202,36 @@ function actualizarContadorIntentosSupeior(intentosUsados) {
   }
 }
 
+async function actualizarPuntuacionDisplay() {
+  const puntuacionValor = document.getElementById("puntuacion-valor");
+  const puntuacionContainer = document.getElementById("puntuacion-display");
+  
+  if (puntuacionValor) {
+    // Obtener puntuación actual del jugador
+    const perfilRef = ref(db, `perfiles/${userId}`);
+    const perfilSnap = await get(perfilRef);
+    const perfil = perfilSnap.val();
+    
+    if (perfil && perfil.puntuacionTotal) {
+      const nuevaPuntuacion = perfil.puntuacionTotal;
+      const puntuacionAnterior = puntuacionJugador;
+      
+      puntuacionJugador = nuevaPuntuacion;
+      puntuacionValor.textContent = nuevaPuntuacion.toLocaleString();
+      
+      // Animación si la puntuación aumentó
+      if (nuevaPuntuacion > puntuacionAnterior && puntuacionContainer) {
+        puntuacionContainer.classList.add('puntuacion-highlight');
+        setTimeout(() => {
+          puntuacionContainer.classList.remove('puntuacion-highlight');
+        }, 2000);
+      }
+    } else {
+      puntuacionValor.textContent = "0";
+    }
+  }
+}
+
 // ---------------------- CREAR / UNIR SALA ------------------------
 
 async function crearSala() {
@@ -208,7 +257,7 @@ async function crearSala() {
   });
 
   mostrarEstado("Sala creada: " + salaId, "green");
-  iniciarJuego(nombre);
+  await iniciarJuego(nombre);
   ocultarFormularios();
   mostrarBotonSalir(true);
   actualizarListaSalas();
@@ -235,7 +284,7 @@ async function unirseSala() {
   await set(ref(db, `salas/${salaId}/jugadores/${userId}`), { nombre, intentosCount: 0, intentos: {} });
 
   mostrarEstado("Unido a sala " + salaId);
-  iniciarJuego(nombre);
+  await iniciarJuego(nombre);
   ocultarFormularios();
   mostrarBotonSalir(true);
   actualizarListaSalas();
@@ -243,7 +292,7 @@ async function unirseSala() {
 
 // ---------------------- JUEGO ------------------------
 
-function iniciarJuego(nombreJugador) {
+async function iniciarJuego(nombreJugador) {
   document.getElementById("formulario").style.display = "none";
   document.getElementById("juego").style.display = "block";
   document.getElementById("jugadorNombre").textContent = nombreJugador;
@@ -252,9 +301,13 @@ function iniciarJuego(nombreJugador) {
   // Limpiar orden de selección al iniciar
   ordenSeleccion = [];
   juegoTerminado = false; // Resetear flag de juego terminado
+  inicioPartida = Date.now(); // Registrar inicio de la partida
   
   // Crear el contador de intentos en la parte superior
   crearContadorIntentosSupeior();
+  
+  // Cargar y actualizar puntuación del jugador
+  await actualizarPuntuacionDisplay();
   
   mostrarColores();
   escucharEstadoJuego();
@@ -534,6 +587,9 @@ function mostrarCombinacionCorrecta() {
   mostrarEstado("No adivinaste el color, perdiste", "red");
   juegoTerminado = true;
   
+  // Actualizar estadísticas de partidas jugadas (sin puntos por perder)
+  actualizarPartidasJugadas();
+  
   console.log("Mostrando combinación correcta. Secuencia:", secuenciaSala);
   
   // Verificar que tengamos la secuencia
@@ -643,6 +699,150 @@ function obtenerNombreColor(color) {
   return coloresNombres[color] || color;
 }
 
+// ---------------------- SISTEMA DE PUNTUACIÓN ------------------------
+
+function calcularPuntuacion(intentosUsados, tiempoTranscurrido) {
+  let puntuacionBase = 1000; // Puntuación base por ganar
+  
+  // Bonus por pocos intentos (máximo 500 puntos)
+  const bonusIntentos = Math.max(0, 500 - (intentosUsados - 1) * 50);
+  
+  // Bonus por velocidad (máximo 300 puntos)
+  // Menos puntos por cada segundo que pase de 30 segundos
+  const tiempoEnSegundos = Math.floor(tiempoTranscurrido / 1000);
+  const bonusVelocidad = Math.max(0, 300 - Math.max(0, tiempoEnSegundos - 30) * 5);
+  
+  // Bonus perfecto (200 puntos extra si se gana en el primer intento y menos de 15 segundos)
+  const bonusPerfecto = (intentosUsados === 1 && tiempoEnSegundos <= 15) ? 200 : 0;
+  
+  const puntuacionTotal = puntuacionBase + bonusIntentos + bonusVelocidad + bonusPerfecto;
+  
+  return {
+    total: puntuacionTotal,
+    base: puntuacionBase,
+    bonusIntentos: bonusIntentos,
+    bonusVelocidad: bonusVelocidad,
+    bonusPerfecto: bonusPerfecto,
+    tiempoSegundos: tiempoEnSegundos,
+    intentos: intentosUsados
+  };
+}
+
+async function guardarPuntuacion(puntuacionData) {
+  const jugadorNombre = document.getElementById("jugadorNombre").textContent;
+  const timestamp = Date.now();
+  
+  // Guardar puntuación individual del jugador
+  await push(ref(db, `puntuaciones/${userId}`), {
+    puntuacion: puntuacionData.total,
+    detalles: puntuacionData,
+    jugador: jugadorNombre,
+    fecha: timestamp,
+    salaId: salaId
+  });
+  
+  // Actualizar puntuación total del jugador
+  const perfilRef = ref(db, `perfiles/${userId}`);
+  const perfilSnap = await get(perfilRef);
+  const perfilActual = perfilSnap.val() || { 
+    nombre: jugadorNombre, 
+    puntuacionTotal: 0, 
+    partidasGanadas: 0,
+    partidasJugadas: 0
+  };
+  
+  await update(perfilRef, {
+    nombre: jugadorNombre,
+    puntuacionTotal: (perfilActual.puntuacionTotal || 0) + puntuacionData.total,
+    partidasGanadas: (perfilActual.partidasGanadas || 0) + 1,
+    partidasJugadas: (perfilActual.partidasJugadas || 0) + 1,
+    ultimaPartida: timestamp
+  });
+  
+  puntuacionJugador = (perfilActual.puntuacionTotal || 0) + puntuacionData.total;
+}
+
+async function actualizarPartidasJugadas() {
+  const jugadorNombre = document.getElementById("jugadorNombre").textContent;
+  const timestamp = Date.now();
+  
+  // Solo actualizar partidasJugadas si perdió (no ganó)
+  const perfilRef = ref(db, `perfiles/${userId}`);
+  const perfilSnap = await get(perfilRef);
+  const perfilActual = perfilSnap.val() || { 
+    nombre: jugadorNombre, 
+    puntuacionTotal: 0, 
+    partidasGanadas: 0,
+    partidasJugadas: 0
+  };
+  
+  await update(perfilRef, {
+    nombre: jugadorNombre,
+    puntuacionTotal: perfilActual.puntuacionTotal || 0,
+    partidasGanadas: perfilActual.partidasGanadas || 0,
+    partidasJugadas: (perfilActual.partidasJugadas || 0) + 1,
+    ultimaPartida: timestamp
+  });
+}
+
+function mostrarDetallesPuntuacion(puntuacionData) {
+  const { total, base, bonusIntentos, bonusVelocidad, bonusPerfecto, tiempoSegundos, intentos } = puntuacionData;
+  
+  const detallesDiv = document.createElement("div");
+  detallesDiv.className = "detalles-puntuacion";
+  detallesDiv.style.cssText = `
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #28a745;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px 0;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  `;
+  
+  detallesDiv.innerHTML = `
+    <div style="text-align: center;">
+      <h3 style="color: #28a745; margin: 0 0 15px 0; font-size: 20px;">
+        🏆 ¡Puntuación Obtenida: ${total.toLocaleString()} puntos!
+      </h3>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #007bff;">
+          <strong style="color: #007bff;">⭐ Puntuación Base</strong><br>
+          <span style="font-size: 18px; font-weight: bold;">${base}</span> puntos
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid ${bonusIntentos > 0 ? '#28a745' : '#6c757d'};">
+          <strong style="color: ${bonusIntentos > 0 ? '#28a745' : '#6c757d'};">🎯 Bonus Precisión</strong><br>
+          <span style="font-size: 18px; font-weight: bold;">${bonusIntentos}</span> puntos<br>
+          <small>${intentos} intento${intentos !== 1 ? 's' : ''} usado${intentos !== 1 ? 's' : ''}</small>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid ${bonusVelocidad > 0 ? '#ffc107' : '#6c757d'};">
+          <strong style="color: ${bonusVelocidad > 0 ? '#ffc107' : '#6c757d'};">⚡ Bonus Velocidad</strong><br>
+          <span style="font-size: 18px; font-weight: bold;">${bonusVelocidad}</span> puntos<br>
+          <small>${tiempoSegundos} segundo${tiempoSegundos !== 1 ? 's' : ''}</small>
+        </div>
+        
+        ${bonusPerfecto > 0 ? `
+        <div style="background: linear-gradient(45deg, #ff6b6b, #feca57); padding: 12px; border-radius: 8px; color: white;">
+          <strong>🎊 ¡PERFECTO!</strong><br>
+          <span style="font-size: 18px; font-weight: bold;">${bonusPerfecto}</span> puntos<br>
+          <small>¡Increíble!</small>
+        </div>
+        ` : ''}
+      </div>
+      
+      <div style="background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 15px; border-radius: 10px; margin-top: 15px;">
+        <strong style="font-size: 16px;">💎 Puntuación Total Acumulada</strong><br>
+        <span style="font-size: 24px; font-weight: bold;">${puntuacionJugador.toLocaleString()}</span> puntos
+      </div>
+    </div>
+  `;
+  
+  const historial = document.getElementById("historial");
+  historial.insertBefore(detallesDiv, historial.firstChild);
+}
+
 function convertirRGBaNombre(rgbColor) {
   // Normalizar el color quitando espacios
   const colorLimpio = rgbColor.replace(/\s/g, '');
@@ -693,6 +893,29 @@ function reproducirSonidoDerrota() {
 function mostrarMensajeVictoria() {
   mostrarEstado("¡Ganaste!", "green");
   juegoTerminado = true;
+  
+  // Calcular puntuación
+  const tiempoTranscurrido = Date.now() - inicioPartida;
+  const jugadorRef = ref(db, `salas/${salaId}/jugadores/${userId}`);
+  
+  get(jugadorRef).then(async (snap) => {
+    if (snap.exists()) {
+      const data = snap.val();
+      const intentosUsados = data.intentosCount || 1;
+      
+      // Calcular puntuación
+      const puntuacionData = calcularPuntuacion(intentosUsados, tiempoTranscurrido);
+      
+      // Guardar puntuación
+      await guardarPuntuacion(puntuacionData);
+      
+      // Mostrar detalles de puntuación
+      mostrarDetallesPuntuacion(puntuacionData);
+      
+      // Actualizar display de puntuación
+      await actualizarPuntuacionDisplay();
+    }
+  });
   
   const historial = document.getElementById("historial");
   
@@ -1087,7 +1310,7 @@ async function unirseDesdeLista(codigo) {
   });
 
   mostrarEstado("Unido a sala " + salaId);
-  iniciarJuego(nombre);
+  await iniciarJuego(nombre);
   ocultarFormularios();
   mostrarBotonSalir(true);
   actualizarListaSalas();
@@ -1486,6 +1709,7 @@ async function iniciarNuevaPartida() {
   
   // Limpiar estado del juego
   juegoTerminado = false;
+  inicioPartida = Date.now(); // Nuevo tiempo de inicio
   
   // Generar nueva secuencia
   secuenciaSala = generarSecuencia();
@@ -1624,6 +1848,9 @@ window.enviarMensaje = enviarMensaje;
 window.mostrarInfoJuego = mostrarInfoJuego;
 window.cerrarModalInfo = cerrarModalInfo;
 window.votarRevancha = votarRevancha;
+window.mostrarRanking = mostrarRanking;
+window.cerrarModalRanking = cerrarModalRanking;
+window.mostrarTabRanking = mostrarTabRanking;
 
 // ---------------------- MODAL DE INFORMACIÓN ------------------------
 
@@ -1643,15 +1870,215 @@ function cerrarModalInfo() {
   document.body.style.overflow = "auto";
 }
 
-// Cerrar modal con tecla Escape
-document.addEventListener("keydown", function(event) {
-  if (event.key === "Escape") {
-    cerrarModalInfo();
+// ---------------------- SISTEMA DE RANKING ------------------------
+
+async function mostrarRanking() {
+  const modal = document.getElementById("modalRanking");
+  modal.classList.add("active");
+  
+  // Prevenir scroll del body cuando el modal está abierto
+  document.body.style.overflow = "hidden";
+  
+  // Cargar ranking global por defecto
+  await cargarRankingGlobal();
+}
+
+function cerrarModalRanking() {
+  const modal = document.getElementById("modalRanking");
+  modal.classList.remove("active");
+  
+  // Restaurar scroll del body
+  document.body.style.overflow = "auto";
+}
+
+function mostrarTabRanking(tab, element) {
+  // Cambiar pestañas activas
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.ranking-tab-content').forEach(content => content.classList.remove('active'));
+  
+  // Si se pasa el elemento, lo activamos; si no, buscamos por el tab
+  if (element) {
+    element.classList.add('active');
+  } else {
+    document.querySelector(`[onclick*="${tab}"]`).classList.add('active');
   }
-});
+  document.getElementById(`ranking-${tab}`).classList.add('active');
+  
+  // Cargar contenido según la pestaña
+  if (tab === 'global') {
+    cargarRankingGlobal();
+  } else if (tab === 'personal') {
+    cargarEstadisticasPersonales();
+  }
+}
+
+async function cargarRankingGlobal() {
+  const listaContainer = document.getElementById("ranking-lista");
+  listaContainer.innerHTML = '<div class="loading">Cargando ranking...</div>';
+  
+  try {
+    // Obtener todos los perfiles de jugadores
+    const perfilesSnap = await get(ref(db, 'perfiles'));
+    const perfiles = perfilesSnap.val() || {};
+    
+    // Convertir a array y ordenar por puntuación
+    const jugadores = Object.entries(perfiles)
+      .map(([id, perfil]) => ({ id, ...perfil }))
+      .filter(jugador => jugador.puntuacionTotal > 0)
+      .sort((a, b) => b.puntuacionTotal - a.puntuacionTotal)
+      .slice(0, 50); // Top 50
+    
+    if (jugadores.length === 0) {
+      listaContainer.innerHTML = '<div class="loading">No hay puntuaciones registradas aún.</div>';
+      return;
+    }
+    
+    listaContainer.innerHTML = '';
+    
+    jugadores.forEach((jugador, index) => {
+      const posicion = index + 1;
+      const item = document.createElement('div');
+      item.className = `ranking-item ${posicion <= 3 ? `top-${posicion}` : ''}`;
+      
+      // Calcular estadísticas
+      const winRate = jugador.partidasJugadas > 0 
+        ? Math.round((jugador.partidasGanadas / jugador.partidasJugadas) * 100) 
+        : 0;
+      
+      const promedioIntentos = jugador.partidasGanadas > 0 
+        ? Math.round(jugador.puntuacionTotal / jugador.partidasGanadas)
+        : 0;
+      
+      // Obtener emoji de posición
+      let posicionEmoji = `${posicion}°`;
+      if (posicion === 1) posicionEmoji = '🥇';
+      else if (posicion === 2) posicionEmoji = '🥈';
+      else if (posicion === 3) posicionEmoji = '🥉';
+      
+      item.innerHTML = `
+        <div class="ranking-info">
+          <div class="ranking-position">${posicionEmoji}</div>
+          <div class="ranking-player">${jugador.nombre}</div>
+        </div>
+        <div class="ranking-stats">
+          <div class="ranking-score">${jugador.puntuacionTotal.toLocaleString()} pts</div>
+          <div class="ranking-details">
+            ${jugador.partidasGanadas}W/${jugador.partidasJugadas}J (${winRate}%)
+          </div>
+        </div>
+      `;
+      
+      // Highlight del jugador actual
+      if (jugador.id === userId) {
+        item.style.border = '2px solid #28a745';
+        item.style.boxShadow = '0 4px 12px rgba(40, 167, 69, 0.3)';
+      }
+      
+      listaContainer.appendChild(item);
+    });
+    
+  } catch (error) {
+    console.error('Error cargando ranking:', error);
+    listaContainer.innerHTML = '<div class="loading">Error cargando el ranking.</div>';
+  }
+}
+
+async function cargarEstadisticasPersonales() {
+  const statsContainer = document.getElementById("estadisticas-personales");
+  const historialContainer = document.getElementById("historial-lista");
+  
+  statsContainer.innerHTML = '<div class="loading">Cargando estadísticas...</div>';
+  historialContainer.innerHTML = '<div class="loading">Cargando historial...</div>';
+  
+  try {
+    // Cargar perfil del jugador
+    const perfilSnap = await get(ref(db, `perfiles/${userId}`));
+    const perfil = perfilSnap.val() || {
+      puntuacionTotal: 0,
+      partidasGanadas: 0,
+      partidasJugadas: 0
+    };
+    
+    // Calcular estadísticas
+    const winRate = perfil.partidasJugadas > 0 
+      ? Math.round((perfil.partidasGanadas / perfil.partidasJugadas) * 100) 
+      : 0;
+    
+    const promedioIntentos = perfil.partidasGanadas > 0 
+      ? Math.round(perfil.puntuacionTotal / perfil.partidasGanadas)
+      : 0;
+    
+    // Mostrar estadísticas
+    statsContainer.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-value">${perfil.puntuacionTotal.toLocaleString()}</div>
+        <div class="stat-label">Puntuación Total</div>
+      </div>
+      <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+        <div class="stat-value">${perfil.partidasGanadas}</div>
+        <div class="stat-label">Partidas Ganadas</div>
+      </div>
+      <div class="stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);">
+        <div class="stat-value">${winRate}%</div>
+        <div class="stat-label">Tasa de Victoria</div>
+      </div>
+      <div class="stat-card" style="background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);">
+        <div class="stat-value">${promedioIntentos}</div>
+        <div class="stat-label">Promedio por Victoria</div>
+      </div>
+    `;
+    
+    // Cargar historial de puntuaciones
+    const puntuacionesSnap = await get(ref(db, `puntuaciones/${userId}`));
+    const puntuaciones = puntuacionesSnap.val() || {};
+    
+    const historialArray = Object.values(puntuaciones)
+      .sort((a, b) => b.fecha - a.fecha)
+      .slice(0, 20); // Últimas 20 partidas
+    
+    if (historialArray.length === 0) {
+      historialContainer.innerHTML = '<div class="loading">No hay historial de puntuaciones.</div>';
+      return;
+    }
+    
+    historialContainer.innerHTML = '';
+    
+    historialArray.forEach(puntuacion => {
+      const fecha = new Date(puntuacion.fecha);
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      
+      item.innerHTML = `
+        <div>
+          <div class="history-score">${puntuacion.puntuacion.toLocaleString()} puntos</div>
+          <div class="history-date">${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}</div>
+        </div>
+        <div style="text-align: right; font-size: 12px; color: #6c757d;">
+          ${puntuacion.detalles.intentos} intento${puntuacion.detalles.intentos !== 1 ? 's' : ''} • 
+          ${puntuacion.detalles.tiempoSegundos}s
+        </div>
+      `;
+      
+      historialContainer.appendChild(item);
+    });
+    
+  } catch (error) {
+    console.error('Error cargando estadísticas personales:', error);
+    statsContainer.innerHTML = '<div class="loading">Error cargando estadísticas.</div>';
+    historialContainer.innerHTML = '<div class="loading">Error cargando historial.</div>';
+  }
+}
 
 window.onload = () => {
   actualizarListaSalas();
   mostrarBotonSalir(false);
   mostrarEstado("Listo para jugar", "green");
 };
+
+// Cerrar modal con tecla Escape
+document.addEventListener("keydown", function(event) {
+  if (event.key === "Escape") {
+    cerrarModalInfo();
+    cerrarModalRanking();
+  }
+});

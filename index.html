@@ -18,6 +18,10 @@
         <span class="info-icon">ℹ️</span>
         <span class="info-text">Info del Juego</span>
     </button>
+    <button id="rankingBtn" class="btn-ranking" onclick="mostrarRanking()">
+        <span class="ranking-icon">🏆</span>
+        <span class="ranking-text">Ranking</span>
+    </button>
 </div>
 
 <div class="app-container">
@@ -161,6 +165,31 @@
             </div>
 
             <div class="info-section">
+                <h3>🏆 Sistema de Puntuación</h3>
+                <p>¡Ahora puedes acumular puntos y competir con otros jugadores!</p>
+                <div class="mode-grid">
+                    <div class="mode-card">
+                        <h4>💎 Cálculo de Puntos</h4>
+                        <ul>
+                            <li><strong>Base:</strong> 1000 puntos por victoria</li>
+                            <li><strong>Precisión:</strong> +500pts máximo (menos intentos)</li>
+                            <li><strong>Velocidad:</strong> +300pts máximo (menos tiempo)</li>
+                            <li><strong>Perfecto:</strong> +200pts (1er intento, <15s)</li>
+                        </ul>
+                    </div>
+                    <div class="mode-card">
+                        <h4>📈 Ranking y Estadísticas</h4>
+                        <ul>
+                            <li>🏆 <strong>Ranking global</strong> de mejores jugadores</li>
+                            <li>📊 <strong>Estadísticas personales</strong> detalladas</li>
+                            <li>🥇 <strong>Podio especial</strong> para Top 3</li>
+                            <li>📜 <strong>Historial</strong> de últimas 20 partidas</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
                 <h3>🎯 Cómo Jugar</h3>
                 <ol class="game-steps">
                     <li><strong>Crear o unirse</strong> a una sala</li>
@@ -176,12 +205,16 @@
                 <div class="features-grid">
                     <div class="feature-item">🎨 Selección visual con números de orden</div>
                     <div class="feature-item">📊 Contador prominente de intentos</div>
-                    <div class="feature-item">🎉 Efectos de victoria con confeti</div>
+                    <div class="feature-item">� Sistema de puntuación competitivo</div>
+                    <div class="feature-item">📈 Ranking global de jugadores</div>
+                    <div class="feature-item">�🎉 Efectos de victoria con confeti</div>
                     <div class="feature-item">💔 Revelación de secuencia en derrota</div>
                     <div class="feature-item">🔊 Sonidos dinámicos</div>
                     <div class="feature-item">💬 Chat en tiempo real</div>
                     <div class="feature-item">📱 Diseño responsivo</div>
                     <div class="feature-item">🌈 Secuencias únicas sin repetición</div>
+                    <div class="feature-item">🔄 Sistema de revancha con votación</div>
+                    <div class="feature-item">📊 Estadísticas personales detalladas</div>
                 </div>
             </div>
 
@@ -192,6 +225,8 @@
                     <li><strong>Análisis:</strong> Combinar información de colores y posiciones</li>
                     <li><strong>Eliminación:</strong> Descartar colores que no aparecen en las pistas</li>
                     <li><strong>Tiempo:</strong> Planificar antes de seleccionar en modo solo</li>
+                    <li><strong>Puntuación máxima:</strong> Resolver en pocos intentos y rápidamente</li>
+                    <li><strong>Ranking:</strong> Usa el botón 🏆 para ver tu progreso y competir</li>
                 </ul>
             </div>
 
@@ -199,6 +234,41 @@
                 <p>🎮 <strong>¡Disfruta jugando Adivina Colores Online!</strong></p>
                 <p><small>Desarrollado con Firebase Realtime Database • Agosto 2025</small></p>
                 <p><small>Desarrollado por Humberto Ovejero • Agosto 2025</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Ranking -->
+<div id="modalRanking" class="modal-overlay">
+    <div class="modal-content modal-ranking">
+        <div class="modal-header">
+            <h2>🏆 Ranking de Puntuaciones</h2>
+            <button class="modal-close" onclick="cerrarModalRanking()">&times;</button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="ranking-tabs">
+                <button class="tab-btn active" onclick="mostrarTabRanking('global', this)">🌍 Global</button>
+                <button class="tab-btn" onclick="mostrarTabRanking('personal', this)">👤 Personal</button>
+            </div>
+            
+            <div id="ranking-global" class="ranking-tab-content active">
+                <div id="ranking-lista" class="ranking-list">
+                    <div class="loading">Cargando ranking...</div>
+                </div>
+            </div>
+            
+            <div id="ranking-personal" class="ranking-tab-content">
+                <div id="estadisticas-personales" class="personal-stats">
+                    <div class="loading">Cargando estadísticas...</div>
+                </div>
+                <div id="historial-personal" class="personal-history">
+                    <h3>📈 Historial de Puntuaciones</h3>
+                    <div id="historial-lista" class="history-list">
+                        <div class="loading">Cargando historial...</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

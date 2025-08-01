@@ -1656,6 +1656,179 @@ hr {
   }
 }
 
+/* ===================== MODAL DE REVANCHA ===================== */
+
+.modal-revancha {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 10001;
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.4s ease;
+}
+
+.modal-revancha.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+  .modal-revancha-content {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.8);
+    animation: modalSlideIn 0.4s ease forwards;
+    max-width: 600px; /* Aumentado para incluir colores */
+    width: 90%;
+    position: relative;
+    max-height: 80vh; /* Añadir altura máxima */
+    overflow-y: auto; /* Scroll si es necesario */
+  }@keyframes modalSlideIn {
+  to {
+    transform: scale(1);
+  }
+}
+
+.modal-revancha h2 {
+  color: white;
+  margin: 0 0 20px 0;
+  font-size: 28px;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.modal-revancha p {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 30px 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.modal-revancha-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-modal-revancha {
+  padding: 16px 32px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 140px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-modal-si {
+  background: white;
+  color: #28a745;
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+}
+
+.btn-modal-si:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.4);
+  background: #f8f9fa;
+}
+
+.btn-modal-no {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-modal-no:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.modal-revancha-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px;
+  transition: color 0.3s ease;
+}
+
+.modal-revancha-close:hover {
+  color: white;
+}
+
+/* Sección de colores en el modal */
+.modal-revancha .colores-correctos-modal {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 15px;
+  margin: 15px 0;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.modal-revancha .colores-correctos-modal p {
+  color: rgba(255, 255, 255, 0.9) !important;
+  margin: 0 0 12px 0 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+/* Estado de votación */
+.modal-revancha-votacion {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+}
+
+.modal-revancha-votacion h2 {
+  color: #212529;
+}
+
+.modal-revancha-votacion p {
+  color: rgba(33, 37, 41, 0.8);
+}
+
+/* Responsive para modal de revancha */
+@media (max-width: 480px) {
+  .modal-revancha-content {
+    padding: 30px 20px;
+    margin: 20px;
+  }
+  
+  .modal-revancha h2 {
+    font-size: 24px;
+  }
+  
+  .modal-revancha p {
+    font-size: 14px;
+  }
+  
+  .modal-revancha-buttons {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .btn-modal-revancha {
+    padding: 14px 24px;
+    font-size: 14px;
+    min-width: auto;
+    width: 100%;
+  }
+}
+
 
 
 

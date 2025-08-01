@@ -625,10 +625,10 @@ function mostrarColoresRespaldo(secuencia) {
   // Deshabilitar el botón de enviar intento
   document.querySelector("button[onclick='enviarIntento()']").disabled = true;
   
-  // Mostrar botón de revancha después de un breve delay
+  // Mostrar botón de revancha después de un delay más largo para ver los colores
   setTimeout(() => {
     mostrarBotonRevancha();
-  }, 2000);
+  }, 5000); // Aumentado de 2000 a 5000ms (5 segundos)
 }
 
 function obtenerNombreColor(color) {
@@ -726,10 +726,10 @@ function mostrarMensajeVictoria() {
   
   reproducirSonidoVictoria();
   
-  // Mostrar botón de revancha después del confeti
+  // Mostrar botón de revancha después del confeti y tiempo para disfrutar la victoria
   setTimeout(() => {
     mostrarBotonRevancha();
-  }, 3000);
+  }, 5000); // Aumentado de 3000 a 5000ms
 }
 
 function crearConfeti() {
@@ -1173,107 +1173,185 @@ async function mostrarBotonRevancha() {
   const salaData = salaSnap.val();
   const modoJuego = salaData?.modoJuego || "dos";
   
-  // Remover botón existente si existe
-  const botonExistente = document.getElementById("boton-revancha");
-  if (botonExistente) {
-    botonExistente.remove();
+  // Obtener la secuencia correcta para mostrarla en el modal
+  const secuenciaCorrecta = secuenciaSala || salaData?.secuencia || [];
+  
+  // Remover modal existente si existe
+  const modalExistente = document.getElementById("modal-revancha");
+  if (modalExistente) {
+    modalExistente.remove();
   }
   
-  // Crear contenedor del botón de revancha
-  const contenedorRevancha = document.createElement("div");
-  contenedorRevancha.id = "boton-revancha";
-  contenedorRevancha.style.cssText = `
-    text-align: center;
-    margin: 20px 0;
-    padding: 20px;
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-  `;
+  // Crear modal de revancha
+  const modalRevancha = document.createElement("div");
+  modalRevancha.id = "modal-revancha";
+  modalRevancha.className = "modal-revancha";
   
-  const titulo = document.createElement("h4");
-  titulo.style.cssText = `
-    color: white;
-    margin: 0 0 15px 0;
-    font-size: 18px;
-  `;
+  const modalContent = document.createElement("div");
+  modalContent.className = "modal-revancha-content";
   
+  // Botón de cerrar
+  const btnCerrar = document.createElement("button");
+  btnCerrar.className = "modal-revancha-close";
+  btnCerrar.innerHTML = "×";
+  btnCerrar.onclick = () => {
+    modalRevancha.classList.remove("active");
+    setTimeout(() => modalRevancha.remove(), 300);
+  };
+  
+  // Título
+  const titulo = document.createElement("h2");
   if (modoJuego === "solo") {
-    titulo.textContent = "🎮 ¿Querés volver a jugar?";
+    titulo.innerHTML = "🎮 ¿Querés volver a jugar?";
   } else {
-    titulo.textContent = "🤝 ¿Querés la revancha?";
+    titulo.innerHTML = "🤝 ¿Querés la revancha?";
   }
   
-  contenedorRevancha.appendChild(titulo);
+  // Mostrar la combinación correcta en el modal si estamos después de una derrota
+  let seccionColores = null;
+  if (secuenciaCorrecta && secuenciaCorrecta.length === 4) {
+    seccionColores = document.createElement("div");
+    seccionColores.style.cssText = `
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 15px;
+      margin: 15px 0;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    `;
+    
+    const tituloColores = document.createElement("p");
+    tituloColores.innerHTML = "🎯 La combinación correcta era:";
+    tituloColores.style.cssText = `
+      color: rgba(255, 255, 255, 0.9);
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+    `;
+    seccionColores.appendChild(tituloColores);
+    
+    const coloresContainer = document.createElement("div");
+    coloresContainer.style.cssText = `
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    `;
+    
+    secuenciaCorrecta.forEach((color, index) => {
+      const colorBox = document.createElement("div");
+      colorBox.style.cssText = `
+        width: 50px;
+        height: 50px;
+        background-color: ${color};
+        border: 3px solid rgba(255, 255, 255, 0.8);
+        border-radius: 10px;
+        display: inline-block;
+        position: relative;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+      `;
+      colorBox.title = obtenerNombreColor(color);
+      
+      // Número de posición
+      const numeroPos = document.createElement("div");
+      numeroPos.textContent = index + 1;
+      numeroPos.style.cssText = `
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: white;
+        color: #333;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      `;
+      colorBox.appendChild(numeroPos);
+      
+      // Nombre del color
+      const nombreDiv = document.createElement("div");
+      nombreDiv.textContent = obtenerNombreColor(color);
+      nombreDiv.style.cssText = `
+        position: absolute;
+        bottom: -22px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 9px;
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 600;
+        text-align: center;
+        white-space: nowrap;
+      `;
+      colorBox.appendChild(nombreDiv);
+      
+      coloresContainer.appendChild(colorBox);
+    });
+    
+    seccionColores.appendChild(coloresContainer);
+  }
   
-  // Crear botones
+  // Descripción
+  const descripcion = document.createElement("p");
+  if (modoJuego === "solo") {
+    descripcion.innerHTML = "¡Nueva partida con una secuencia diferente te espera!";
+  } else {
+    descripcion.innerHTML = "Ambos jugadores deben estar de acuerdo para iniciar una nueva partida.";
+  }
+  
+  // Contenedor de botones
   const contenedorBotones = document.createElement("div");
-  contenedorBotones.style.cssText = `
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
-  `;
+  contenedorBotones.className = "modal-revancha-buttons";
   
+  // Botón Sí
   const botonSi = document.createElement("button");
-  botonSi.className = "btn-revancha btn-si";
+  botonSi.className = "btn-modal-revancha btn-modal-si";
   botonSi.innerHTML = "✅ ¡Sí, vamos!";
-  botonSi.style.cssText = `
-    background: #ffffff;
-    color: #28a745;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  `;
   botonSi.onclick = () => votarRevancha(true);
   
+  // Botón No
   const botonNo = document.createElement("button");
-  botonNo.className = "btn-revancha btn-no";
+  botonNo.className = "btn-modal-revancha btn-modal-no";
   botonNo.innerHTML = "❌ No, gracias";
-  botonNo.style.cssText = `
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    padding: 10px 22px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.3s ease;
-  `;
   botonNo.onclick = () => votarRevancha(false);
   
-  // Hover effects
-  botonSi.onmouseover = () => {
-    botonSi.style.transform = "scale(1.05)";
-    botonSi.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
-  };
-  botonSi.onmouseout = () => {
-    botonSi.style.transform = "scale(1)";
-    botonSi.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
-  };
-  
-  botonNo.onmouseover = () => {
-    botonNo.style.background = "rgba(255, 255, 255, 0.3)";
-    botonNo.style.transform = "scale(1.05)";
-  };
-  botonNo.onmouseout = () => {
-    botonNo.style.background = "rgba(255, 255, 255, 0.2)";
-    botonNo.style.transform = "scale(1)";
-  };
-  
+  // Ensamblar modal
   contenedorBotones.appendChild(botonSi);
   contenedorBotones.appendChild(botonNo);
-  contenedorRevancha.appendChild(contenedorBotones);
   
-  // Agregar después del historial
-  const historial = document.getElementById("historial");
-  historial.parentNode.insertBefore(contenedorRevancha, historial.nextSibling);
+  modalContent.appendChild(btnCerrar);
+  modalContent.appendChild(titulo);
+  
+  // Agregar sección de colores si existe
+  if (seccionColores) {
+    modalContent.appendChild(seccionColores);
+  }
+  
+  modalContent.appendChild(descripcion);
+  modalContent.appendChild(contenedorBotones);
+  
+  modalRevancha.appendChild(modalContent);
+  
+  // Agregar al DOM
+  document.body.appendChild(modalRevancha);
+  
+  // Mostrar modal con animación
+  setTimeout(() => {
+    modalRevancha.classList.add("active");
+  }, 10);
+  
+  // Cerrar modal al hacer clic en el fondo
+  modalRevancha.addEventListener("click", (e) => {
+    if (e.target === modalRevancha) {
+      modalRevancha.classList.remove("active");
+      setTimeout(() => modalRevancha.remove(), 300);
+    }
+  });
   
   // Inicializar sistema de votación
   await inicializarSistemaVotacion();
@@ -1304,10 +1382,11 @@ async function votarRevancha(voto) {
 }
 
 function actualizarEstadoBotonesRevancha() {
-  const botonSi = document.querySelector(".btn-si");
-  const botonNo = document.querySelector(".btn-no");
+  const modal = document.getElementById("modal-revancha");
+  const botonSi = document.querySelector(".btn-modal-si");
+  const botonNo = document.querySelector(".btn-modal-no");
   
-  if (botonSi && botonNo) {
+  if (modal && botonSi && botonNo) {
     // Deshabilitar botones después de votar
     botonSi.disabled = true;
     botonNo.disabled = true;
@@ -1316,18 +1395,22 @@ function actualizarEstadoBotonesRevancha() {
     botonSi.style.cursor = "not-allowed";
     botonNo.style.cursor = "not-allowed";
     
-    // Mostrar que el jugador ya votó
-    const contenedor = document.getElementById("boton-revancha");
-    if (contenedor) {
-      const mensajeVoto = document.createElement("p");
-      mensajeVoto.style.cssText = `
-        color: rgba(255, 255, 255, 0.9);
-        margin: 10px 0 0 0;
-        font-size: 14px;
-        font-style: italic;
-      `;
-      mensajeVoto.textContent = "✅ Tu voto ha sido registrado. Esperando otros jugadores...";
-      contenedor.appendChild(mensajeVoto);
+    // Cambiar el estilo del modal para mostrar estado de votación
+    const modalContent = modal.querySelector(".modal-revancha-content");
+    if (modalContent) {
+      modalContent.classList.add("modal-revancha-votacion");
+      
+      // Actualizar título
+      const titulo = modalContent.querySelector("h2");
+      if (titulo) {
+        titulo.innerHTML = "⏳ Voto registrado";
+      }
+      
+      // Actualizar descripción
+      const descripcion = modalContent.querySelector("p");
+      if (descripcion) {
+        descripcion.innerHTML = "✅ Tu voto ha sido registrado. Esperando a otros jugadores...";
+      }
     }
   }
 }
@@ -1383,43 +1466,19 @@ function escucharVotosRevancha() {
 }
 
 function actualizarDisplayVotos(votosSi, votosNo, totalVotos, totalJugadores, modoJuego) {
-  const contenedor = document.getElementById("boton-revancha");
-  if (!contenedor) return;
+  const modal = document.getElementById("modal-revancha");
+  const modalContent = modal?.querySelector(".modal-revancha-content");
+  if (!modal || !modalContent) return;
   
-  // Remover display anterior si existe
-  const displayAnterior = contenedor.querySelector(".display-votos");
-  if (displayAnterior) {
-    displayAnterior.remove();
+  // Actualizar descripción con el conteo de votos
+  const descripcion = modalContent.querySelector("p");
+  if (descripcion) {
+    if (modoJuego === "solo") {
+      descripcion.innerHTML = "✅ Tu voto ha sido registrado.";
+    } else {
+      descripcion.innerHTML = `📊 Votos actuales: ${votosSi} Sí, ${votosNo} No (${totalVotos}/${totalJugadores})`;
+    }
   }
-  
-  // Crear nuevo display
-  const displayVotos = document.createElement("div");
-  displayVotos.className = "display-votos";
-  displayVotos.style.cssText = `
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 12px;
-    margin-top: 15px;
-    color: white;
-  `;
-  
-  const estadoVotacion = document.createElement("p");
-  estadoVotacion.style.cssText = `
-    margin: 0;
-    font-size: 14px;
-    text-align: center;
-  `;
-  
-  if (modoJuego === "solo") {
-    estadoVotacion.innerHTML = totalVotos > 0 ? 
-      "🗳️ ¡Has votado! Procesando..." : 
-      "🗳️ Esperando tu decisión...";
-  } else {
-    estadoVotacion.innerHTML = `🗳️ Votos: ${votosSi} ✅ | ${votosNo} ❌ | ${totalVotos}/${totalJugadores} jugadores`;
-  }
-  
-  displayVotos.appendChild(estadoVotacion);
-  contenedor.appendChild(displayVotos);
 }
 
 async function iniciarNuevaPartida() {
@@ -1457,10 +1516,10 @@ async function iniciarNuevaPartida() {
   const historial = document.getElementById("historial");
   historial.innerHTML = "";
   
-  // Remover botón de revancha
-  const botonRevancha = document.getElementById("boton-revancha");
-  if (botonRevancha) {
-    botonRevancha.remove();
+  // Remover modal de revancha
+  const modalRevancha = document.getElementById("modal-revancha");
+  if (modalRevancha) {
+    modalRevancha.remove();
   }
   
   // Resetear colores seleccionados
@@ -1484,57 +1543,74 @@ async function iniciarNuevaPartida() {
 }
 
 function mostrarMensajeFinRevancha(mensaje) {
-  const contenedor = document.getElementById("boton-revancha");
-  if (!contenedor) return;
+  const modal = document.getElementById("modal-revancha");
+  if (!modal) return;
   
-  // Limpiar contenido anterior
-  contenedor.innerHTML = "";
+  const modalContent = modal.querySelector(".modal-revancha-content");
+  if (!modalContent) return;
   
   // Cambiar estilo a mensaje final
-  contenedor.style.background = "linear-gradient(135deg, #6c757d 0%, #495057 100%)";
+  modalContent.className = "modal-revancha-content modal-revancha-votacion";
+  modalContent.style.background = "linear-gradient(135deg, #6c757d 0%, #495057 100%)";
   
-  const mensajeFinal = document.createElement("div");
-  mensajeFinal.style.cssText = `
-    text-align: center;
-    color: white;
-    padding: 20px;
-  `;
+  // Limpiar contenido y crear mensaje final
+  modalContent.innerHTML = "";
   
+  // Botón de cerrar
+  const btnCerrar = document.createElement("button");
+  btnCerrar.className = "modal-revancha-close";
+  btnCerrar.innerHTML = "×";
+  btnCerrar.onclick = () => {
+    modal.classList.remove("active");
+    setTimeout(() => modal.remove(), 300);
+  };
+  
+  // Icono
   const icono = document.createElement("div");
   icono.style.cssText = `
-    font-size: 24px;
-    margin-bottom: 10px;
+    font-size: 48px;
+    margin-bottom: 20px;
   `;
   icono.textContent = "🏁";
   
+  // Título
+  const titulo = document.createElement("h2");
+  titulo.innerHTML = "Votación finalizada";
+  titulo.style.color = "white";
+  
+  // Mensaje
   const texto = document.createElement("p");
+  texto.innerHTML = mensaje;
   texto.style.cssText = `
-    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
     font-size: 16px;
-    font-weight: 600;
+    line-height: 1.5;
+    margin: 0 0 30px 0;
   `;
-  texto.textContent = mensaje;
   
-  const agradecimiento = document.createElement("p");
-  agradecimiento.style.cssText = `
-    margin: 10px 0 0 0;
-    font-size: 14px;
-    opacity: 0.8;
-    font-style: italic;
-  `;
-  agradecimiento.textContent = "¡Gracias por jugar Adivina Colores Online!";
+  // Botón de cerrar modal
+  const botonCerrar = document.createElement("button");
+  botonCerrar.className = "btn-modal-revancha btn-modal-no";
+  botonCerrar.innerHTML = "✅ Entendido";
+  botonCerrar.onclick = () => {
+    modal.classList.remove("active");
+    setTimeout(() => modal.remove(), 300);
+  };
   
-  mensajeFinal.appendChild(icono);
-  mensajeFinal.appendChild(texto);
-  mensajeFinal.appendChild(agradecimiento);
-  contenedor.appendChild(mensajeFinal);
+  // Ensamblar
+  modalContent.appendChild(btnCerrar);
+  modalContent.appendChild(icono);
+  modalContent.appendChild(titulo);
+  modalContent.appendChild(texto);
+  modalContent.appendChild(botonCerrar);
   
-  // Remover el botón después de un tiempo
+  // Auto-cerrar después de 5 segundos
   setTimeout(() => {
-    if (contenedor.parentNode) {
-      contenedor.remove();
+    if (modal && modal.classList.contains("active")) {
+      modal.classList.remove("active");
+      setTimeout(() => modal.remove(), 300);
     }
-  }, 10000);
+  }, 5000);
 }
 
 // ---------------------- EXPORTS ------------------------

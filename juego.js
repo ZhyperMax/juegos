@@ -23,7 +23,7 @@ let pinUsuario = null; // PIN del usuario (solo en memoria durante la sesión)
 let secuenciaSala = [];
 let jugadorTurno = null;
 let timerInterval = null;
-let tiempoRestante = 15;
+let tiempoRestante = 20;
 let jugadoresEnSala = {}; // Variable local para almacenar la información de los jugadores
 let ordenSeleccion = []; // Array para mantener el orden de selección de colores
 let juegoTerminado = false; // Flag para controlar el estado del juego
@@ -581,6 +581,21 @@ async function iniciarJuego(nombreJugador) {
   // Cargar y actualizar puntuación del jugador
   await actualizarPuntuacionDisplay();
   
+  // Obtener modo de juego y configurar UI según el modo
+  const salaSnap = await get(ref(db, `salas/${salaId}`));
+  const modoJuego = salaSnap.val()?.modoJuego || "dos";
+  
+  const chatContainer = document.getElementById("chat-container");
+  const timerDisplay = document.querySelector(".timer-display");
+  
+  if (modoJuego === "solo") {
+    chatContainer.style.display = "none";
+    timerDisplay.style.display = "none";
+  } else {
+    chatContainer.style.display = "flex";
+    timerDisplay.style.display = "block";
+  }
+  
   mostrarColores();
   escucharEstadoJuego();
   escucharTurno();
@@ -670,10 +685,20 @@ function escucharTurno() {
     const sala = salaSnap.val();
     if (!sala || sala.estadoJuego !== "jugando") return;
 
+    const modoJuego = sala.modoJuego || "dos";
+
     if (jugadorTurno === userId) {
-      mostrarEstado("Es tu turno. Tenés 15 segundos.");
-      document.querySelector("button[onclick='enviarIntento()']").disabled = false;
-      iniciarTemporizadorTurno();
+      if (modoJuego === "solo") {
+        mostrarEstado("Es tu turno. Sin límite de tiempo.");
+        document.querySelector("button[onclick='enviarIntento()']").disabled = false;
+        // En modo solo, no iniciar temporizador
+        clearInterval(timerInterval);
+        document.getElementById("tiempoRestante").textContent = "∞";
+      } else {
+        mostrarEstado("Es tu turno. Tenés 20 segundos.");
+        document.querySelector("button[onclick='enviarIntento()']").disabled = false;
+        iniciarTemporizadorTurno(modoJuego);
+      }
     } else {
       const nombreOtroJugador = jugadoresEnSala[jugadorTurno]?.nombre || "otro jugador";
       mostrarEstado(`Es el turno de ${nombreOtroJugador}`, "orange");
@@ -684,8 +709,15 @@ function escucharTurno() {
   });
 }
 
-function iniciarTemporizadorTurno() {
-  tiempoRestante = 15;
+function iniciarTemporizadorTurno(modoJuego = "dos") {
+  // En modo solo no hay temporizador
+  if (modoJuego === "solo") {
+    document.getElementById("tiempoRestante").textContent = "∞";
+    return;
+  }
+
+  // En modo multijugador: 20 segundos
+  tiempoRestante = 20;
   document.getElementById("tiempoRestante").textContent = tiempoRestante;
   clearInterval(timerInterval);
   timerInterval = setInterval(async () => {
@@ -698,9 +730,9 @@ function iniciarTemporizadorTurno() {
       // Verificar si es modo solo
       const salaSnap = await get(ref(db, `salas/${salaId}`));
       const salaData = salaSnap.val();
-      const modoJuego = salaData?.modoJuego || "dos";
+      const modoJuegoActual = salaData?.modoJuego || "dos";
       
-      if (modoJuego === "solo") {
+      if (modoJuegoActual === "solo") {
         // En modo solo, contar como intento perdido
         await contarIntentoTiempoAgotado();
       } else {

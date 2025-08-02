@@ -1,0 +1,162 @@
+/* ==================== ESTILOS DE BOTONES ==================== */
+
+/* Botones principales */
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin: 5px;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+  color: white;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #1e7e34 0%, #155724 100%);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+  color: #212529;
+}
+
+.btn-warning:hover {
+  background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%);
+}
+
+.btn-info {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+  color: white;
+}
+
+.btn-info:hover {
+  background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+}
+
+/* Botones especiales */
+.btn-ranking {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+  color: #212529;
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  z-index: 1000;
+  border-radius: 25px;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+}
+
+.btn-ranking:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(255, 193, 7, 0.6);
+}
+
+.ranking-icon {
+  font-size: 18px;
+}
+
+.ranking-text {
+  font-size: 13px;
+}
+
+.btn-info {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+  color: white;
+  position: fixed;
+  top: 80px;
+  left: 15px;
+  z-index: 1000;
+  border-radius: 25px;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);
+}
+
+.btn-info:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(23, 162, 184, 0.6);
+}
+
+.info-icon {
+  font-size: 18px;
+}
+
+.info-text {
+  font-size: 13px;
+}
+
+/* Botones deshabilitados */
+.btn:disabled {
+  background: #6c757d !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+  opacity: 0.6;
+}
+
+/* Botones pequeños */
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+/* Botones grandes */
+.btn-lg {
+  padding: 16px 32px;
+  font-size: 18px;
+}

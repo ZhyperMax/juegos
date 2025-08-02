@@ -1,0 +1,109 @@
+/* ==================== ESTILOS DE FORMULARIOS ==================== */
+
+#formulario {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Responsive grid para pantallas más grandes */
+@media (min-width: 768px) {
+  #formulario {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  
+  #crear {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  
+  #unirse {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  
+  #listaSalas {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  
+  #estadoApp {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}
+
+#formulario input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#formulario input[type="text"]:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+#formulario button {
+  width: 100%;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#formulario button:hover {
+  background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+#formulario button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Estilos para formularios individuales */
+.formulario {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.formulario h3 {
+  text-align: center;
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.formulario label {
+  display: block;
+  margin: 15px 0;
+  font-size: 16px;
+  color: #495057;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.formulario input[type="radio"] {
+  margin-right: 8px;
+}

@@ -1,0 +1,48 @@
+/* ==================== ESTILOS BASE ==================== */
+
+body {
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  color: #333;
+}
+
+/* Logo en la esquina */
+.logo-container {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 200px;
+}
+
+.logo {
+  width: 60px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+  display: block;
+}
+
+.logo:hover {
+  transform: scale(1.1);
+}
+
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 20px 20px 20px; /* Aumentar padding-top para dar espacio a elementos fijos */
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+}

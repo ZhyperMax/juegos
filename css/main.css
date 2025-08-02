@@ -1,0 +1,101 @@
+/* ==================== ARCHIVO PRINCIPAL CSS - VERSIÓN ORGANIZADA ==================== */
+/* 🎮 Adivina Colores Online - CSS Modularizado */
+/* Importa todos los módulos CSS del juego */
+
+@import url('base.css');
+@import url('formularios.css');
+@import url('juego.css');
+@import url('botones.css');
+@import url('modales.css');
+@import url('chat.css');
+@import url('autenticacion.css');
+@import url('ranking.css');
+@import url('responsivo.css');
+
+/* Estilos globales adicionales */
+* {
+  box-sizing: border-box;
+}
+
+/* Scroll suave */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Ocultar scrollbar pero mantener funcionalidad */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Estados del juego */
+#juego {
+  display: none;
+}
+
+#estadoApp {
+  text-align: center;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.estado-success {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.estado-error {
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.estado-warning {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.estado-info {
+  background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+/* Utilidades */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-flex { display: flex !important; }
+
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 1rem; }
+.mt-4 { margin-top: 1.5rem; }
+.mt-5 { margin-top: 3rem; }
+
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 1rem; }
+.mb-4 { margin-bottom: 1.5rem; }
+.mb-5 { margin-bottom: 3rem; }

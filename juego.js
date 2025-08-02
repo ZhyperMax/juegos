@@ -386,6 +386,9 @@ async function registrarUsuario() {
       cerrarModalAuth();
       mostrarBienvenida();
       
+      // Inicializar el juego después de registrarse
+      inicializarJuegoNormal();
+      
       // Verificar si hay una invitación pendiente
       const salaInvitacion = localStorage.getItem('salaInvitacion');
       if (salaInvitacion) {
@@ -473,6 +476,9 @@ async function iniciarSesion() {
     setTimeout(() => {
       cerrarModalAuth();
       mostrarBienvenida();
+      
+      // Inicializar el juego después de autenticarse
+      inicializarJuegoNormal();
       
       // Verificar si hay una invitación pendiente
       const salaInvitacion = localStorage.getItem('salaInvitacion');
@@ -2918,22 +2924,54 @@ window.onload = () => {
   inicializarAudio();
   cargarPreferenciaSonidos();
   
-  // Si no hay usuario, crear uno temporal para que el juego funcione
-  if (!userId || !nombreUsuario) {
-    const numeroAleatorio = Math.floor(Math.random() * 1000);
-    userId = `user_${Date.now()}_${numeroAleatorio}`;
-    nombreUsuario = `Jugador${numeroAleatorio}`;
-    pinUsuario = "0000";
-    
-    // Ocultar modal de auth si existe
-    const authModal = document.getElementById('authModal');
-    if (authModal) {
-      authModal.style.display = 'none';
-    }
-    
-    console.log("Usuario temporal creado:", nombreUsuario);
-  }
+  // Verificar si hay una sesión guardada
+  const usuarioAutenticado = localStorage.getItem('usuarioAutenticado');
   
+  if (usuarioAutenticado) {
+    try {
+      const datosUsuario = JSON.parse(usuarioAutenticado);
+      // Usuario ya tiene sesión guardada
+      nombreUsuario = datosUsuario.nombre;
+      pinUsuario = datosUsuario.pin;
+      userId = datosUsuario.userId;
+      
+      // Ocultar modal de auth
+      const authModal = document.getElementById('authModal');
+      if (authModal) {
+        authModal.style.display = 'none';
+      }
+      
+      // Actualizar display del usuario
+      actualizarDisplayUsuario();
+      
+      console.log("Sesión restaurada:", nombreUsuario);
+      
+      // Continuar con la inicialización normal
+      inicializarJuegoNormal();
+      
+    } catch (error) {
+      console.error("Error parseando datos de usuario:", error);
+      // Si hay error, limpiar localStorage y mostrar modal
+      localStorage.removeItem('usuarioAutenticado');
+      mostrarModalAuth();
+    }
+  } else {
+    // No hay sesión guardada, mostrar modal de autenticación
+    mostrarModalAuth();
+  }
+};
+
+// Función para mostrar el modal de autenticación
+function mostrarModalAuth() {
+  const authModal = document.getElementById('authModal');
+  if (authModal) {
+    authModal.style.display = 'flex';
+  }
+  console.log("Mostrando modal de autenticación");
+};
+
+// Función para inicializar el juego una vez autenticado
+function inicializarJuegoNormal() {
   actualizarListaSalas();
   mostrarBotonSalir(false);
   
@@ -2949,26 +2987,18 @@ window.onload = () => {
     console.log("🔑 Modo administrador activado para usuario registrado: " + nombreUsuario);
     mostrarEstadisticasAdmin();
   }
-};
+}
 
-// Inicialización de la página
-document.addEventListener('DOMContentLoaded', function() {
-  // Verificar si hay un usuario autenticado en localStorage
-  const usuarioGuardado = localStorage.getItem('usuarioAutenticado');
-  if (usuarioGuardado) {
-    const datosUsuario = JSON.parse(usuarioGuardado);
-    userId = datosUsuario.userId;
-    nombreUsuario = datosUsuario.nombre;
-    pinUsuario = datosUsuario.pin;
-    
-    // Ocultar modal de autenticación y mostrar interfaz principal
-    document.getElementById('authModal').style.display = 'none';
-    mostrarBienvenida();
-  } else {
-    // Mostrar modal de autenticación
-    document.getElementById('authModal').style.display = 'flex';
+// Función para actualizar el display del usuario en la interfaz
+function actualizarDisplayUsuario() {
+  const userDisplay = document.getElementById('userDisplay');
+  const currentUserName = document.getElementById('currentUserName');
+  
+  if (nombreUsuario && userDisplay && currentUserName) {
+    currentUserName.textContent = nombreUsuario;
+    userDisplay.style.display = 'block';
   }
-});
+};
 
 // Cerrar modal con tecla Escape
 document.addEventListener("keydown", function(event) {

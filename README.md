@@ -19,14 +19,17 @@ Un juego interactivo multijugador donde debes adivinar la secuencia correcta de 
 
 #### 🧑‍💻 Modo Solo
 - Juego individual contra la máquina
-- **Presión de tiempo**: 15 segundos por intento
+- **Presión de tiempo**: 20 segundos por intento
 - **Penalización**: El tiempo agotado cuenta como intento perdido
 - **Reinicio automático**: Nuevo cronómetro después de cada intento
 
 #### 👥 Modo Multijugador
 - Hasta 2 jugadores por sala
 - **Sistema de turnos**: Alternancia automática entre jugadores
-- **Tiempo por turno**: 15 segundos para cada jugador
+- **Tiempo por turno**: 20 segundos para cada jugador
+- **Indicador de turno visual**: Muestra claramente de quién es el turno
+- **Resultados para ambos jugadores**: Victoria/derrota personalizada
+- **Sistema de revancha colaborativo**: Votación entre todos los jugadores
 - **Sincronización en tiempo real**: Actualizaciones instantáneas
 
 ### 🖱️ Interfaz y Controles
@@ -86,6 +89,14 @@ Un juego interactivo multijugador donde debes adivinar la secuencia correcta de 
 
 ### 🌐 Sistema Multijugador
 
+#### 🎯 Mejoras Recientes en Multijugador
+- **🎪 Indicador de turno visual**: Elemento prominente que muestra claramente de quién es el turno
+- **🏆 Resultados para ambos jugadores**: El ganador ve mensaje de victoria, el perdedor mensaje de derrota personalizado
+- **🔄 Sistema de revancha mejorado**: Modal aparece automáticamente para ambos jugadores
+- **⚡ Sincronización total**: Todos los eventos del juego se sincronizan en tiempo real
+- **🎮 Experiencia equilibrada**: Ambos jugadores tienen la misma información y oportunidades
+- **🔄 Gestión inteligente de turnos**: Cuando un jugador agota sus 10 intentos, el turno pasa automáticamente al otro jugador
+
 #### 🏠 Gestión de Salas
 - **Códigos únicos**: Salas identificadas con códigos de 5 caracteres
 - **Lista en tiempo real**: Salas disponibles actualizadas automáticamente
@@ -103,9 +114,11 @@ Un juego interactivo multijugador donde debes adivinar la secuencia correcta de 
 
 #### 👤 Gestión de Jugadores
 - **Identificación clara**: Marcador "(Tú)" para el jugador actual
+- **Indicador de turno**: Display visual prominente mostrando quién juega
 - **Historial individual**: Intentos separados por jugador
 - **Estados diferenciados**: Bordes azules para el jugador actual
 - **Lista de participantes**: Nombres visibles en la sala
+- **Resultados sincronizados**: Ambos jugadores ven victoria/derrota apropiada
 
 #### 💬 Chat Integrado
 - **Comunicación en tiempo real**: Mensajes instantáneos
@@ -146,10 +159,12 @@ Un juego interactivo multijugador donde debes adivinar la secuencia correcta de 
 - **Feedback en tiempo real**: Contador de votos visible
 
 #### 🗳️ Mecánica de Votación
-- **Aparición automática**: Botón aparece 2-3 segundos después del final
+- **Aparición automática**: Modal aparece para todos los jugadores al terminar
 - **Solo mode**: Basta con un voto (del único jugador)
 - **Multiplayer mode**: Requiere unanimidad (todos deben votar "Sí")
 - **Voto único**: Cada jugador puede votar solo una vez
+- **Feedback en tiempo real**: Contador de votos actualizado automáticamente
+- **Estados sincronizados**: Todos ven el progreso de la votación
 
 #### 🎯 Resultados Automáticos
 - **Nueva partida**: Si todos votan "Sí"
@@ -194,6 +209,8 @@ Un juego interactivo multijugador donde debes adivinar la secuencia correcta de 
 ### Frontend
 - **HTML5**: Estructura semántica moderna
 - **CSS3**: Flexbox, Grid, gradientes, animaciones
+- **CSS Modular**: Arquitectura de estilos dividida en 10 archivos especializados
+- **Responsive Design**: Media queries para todos los dispositivos
 - **JavaScript ES6+**: Módulos, async/await, arrow functions
 
 ### Backend/Base de Datos
@@ -234,13 +251,25 @@ Un juego interactivo multijugador donde debes adivinar la secuencia correcta de 
 
 ```
 juegos/
-├── index.html          # Página principal
-├── juego.js           # Lógica del juego y Firebase
-├── juego.css          # Estilos y animaciones
-├── README.md          # Documentación
+├── index.html              # Página principal
+├── juego.js               # Lógica principal del juego
+├── js/
+│   └── config.js          # Configuración de Firebase
+├── css/
+│   ├── main.css           # Archivo principal que importa todos los estilos
+│   ├── base.css           # Estilos base y variables
+│   ├── formularios.css    # Estilos para formularios y autenticación
+│   ├── juego.css          # Estilos del área de juego
+│   ├── botones.css        # Estilos para botones
+│   ├── modales.css        # Estilos para modales y overlays
+│   ├── chat.css           # Estilos del sistema de chat
+│   ├── autenticacion.css  # Estilos específicos de login/registro
+│   ├── ranking.css        # Estilos del sistema de ranking
+│   └── responsivo.css     # Media queries y responsive design
+├── README.md              # Documentación completa
 └── img/
-    ├── icon.ico       # Favicon
-    └── logo.png       # Logo del juego
+    ├── icon.ico           # Favicon
+    └── logo.png           # Logo del juego
 ```
 
 ## 🎯 Reglas del Juego
@@ -275,7 +304,10 @@ Adivinar la secuencia secreta de 4 colores únicos en máximo 10 intentos.
 - ✅ Modo multijugador con turnos
 - ✅ Secuencias sin colores repetidos
 - ✅ Sistema de 10 intentos máximo
-- ✅ Cronómetro de 15 segundos por turno
+- ✅ **Lógica mejorada**: En multijugador, el juego espera a que ambos jugadores agoten sus intentos
+- ✅ **Cambio automático de turnos**: Cuando un jugador agota sus intentos, el turno pasa inmediatamente al otro
+- ✅ **Sistema robusto**: Evita bloqueos cuando un jugador termina antes que el otro
+- ✅ Cronómetro de 20 segundos por turno
 
 **🖱️ Interfaz de Usuario**
 - ✅ Selección de colores con orden numérico
@@ -301,7 +333,11 @@ Adivinar la secuencia secreta de 4 colores únicos en máximo 10 intentos.
 - ✅ Chat en tiempo real
 - ✅ Lista de salas disponibles
 - ✅ Sincronización automática de estados
+- ✅ **Indicador de turno visual en tiempo real**
+- ✅ **Resultados personalizados para cada jugador (ganador/perdedor)**
+- ✅ **Sistema de revancha mejorado con votación colaborativa**
 - ✅ **Sistema de invitaciones por enlace**
+- ✅ **Modal de compartir con diseño completo y responsive**
 - ✅ **Compartir en redes sociales (WhatsApp, Facebook, Telegram)**
 - ✅ **Auto-ingreso desde enlaces de invitación**
 
@@ -332,6 +368,7 @@ Adivinar la secuencia secreta de 4 colores únicos en máximo 10 intentos.
 ### 📋 Próximas Características
 - [x] **Sistema de puntuación**: ✅ Puntos basados en intentos y tiempo
 - [x] **Ranking global**: ✅ Tabla de mejores jugadores
+- [x] **Mejoras multijugador**: ✅ Indicador de turno, resultados para ambos, revancha mejorada
 - [ ] **Dificultades**: Fácil (3 colores), Normal (4), Difícil (5)
 - [ ] **Salas privadas**: Contraseñas para salas exclusivas
 - [ ] **Espectadores**: Modo observador sin participar
@@ -420,14 +457,17 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 
 ## 📈 Estadísticas del Proyecto
 
-- **Líneas de código**: ~1,500+ (JavaScript, HTML, CSS)
-- **Funciones principales**: 25+
-- **Características implementadas**: 30+
+- **Líneas de código**: ~3,000+ (JavaScript, HTML, CSS)
+- **Archivos CSS modulares**: 10 archivos especializados
+- **Funciones principales**: 35+
+- **Características implementadas**: 40+
 - **Tiempo de desarrollo**: En progreso continuo
 - **Dispositivos compatibles**: Desktop, Tablet, Móvil
+- **Modos de juego**: Solo y Multijugador (hasta 2 jugadores)
+- **Funciones multijugador**: Chat, turnos, revancha, resultados sincronizados
 
 ---
 
 **¡Disfruta jugando Adivina Colores Online! 🎨🎮**
 
-*Última actualización: Agosto 2025*
+*Última actualización: 2 de agosto de 2025*

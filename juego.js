@@ -551,7 +551,18 @@ async function crearSala() {
   });
 
   mostrarEstado("Sala creada: " + salaId, "green");
+  console.log(`Sala creada en modo ${modoJuego}, estado: ${modoJuego === "solo" ? "jugando" : "esperando"}`);
   await iniciarJuego(nombreUsuario);
+  
+  // Para modo solo, asegurar que el turno esté habilitado inmediatamente
+  if (modoJuego === "solo") {
+    console.log("Modo solo: habilitando turno inmediatamente");
+    setTimeout(() => {
+      document.querySelector("button[onclick='enviarIntento()']").disabled = false;
+      mostrarEstado("Es tu turno. Sin límite de tiempo.");
+      document.getElementById("tiempoRestante").textContent = "∞";
+    }, 500);
+  }
   ocultarFormularios();
   mostrarBotonSalir(true);
   actualizarListaSalas();
@@ -632,6 +643,7 @@ async function iniciarJuego(nombreJugador) {
   escucharChat();
   escucharJugadoresYActivarJuego(); 
   escucharSecuencia(); // Añadir listener para la secuencia
+  escucharResultadosJuego(); // Escuchar resultados en multijugador
 
   // Obtener la secuencia de la sala y asegurar que esté disponible
   get(ref(db, `salas/${salaId}/secuencia`)).then(snap => {
@@ -656,14 +668,31 @@ async function iniciarJuego(nombreJugador) {
       const salaSnap = await get(ref(db, `salas/${salaId}`));
       const sala = salaSnap.val();
       
-      if (sala && sala.jugadores && Object.keys(sala.jugadores).length >= 2) {
+      if (!sala) {
+        console.error("No se encontró la sala");
+        return;
+      }
+      
+      console.log("Verificando estado del juego...", {
+        modoJuego,
+        estadoJuego: sala.estadoJuego,
+        turno: sala.turno,
+        userId,
+        jugadoresCount: Object.keys(sala.jugadores || {}).length
+      });
+      
+      if (modoJuego === "solo") {
+        // En modo solo, habilitar inmediatamente
+        console.log("Modo solo: habilitando controles inmediatamente");
+        document.querySelector("button[onclick='enviarIntento()']").disabled = false;
+        mostrarEstado("¡Comenzá a jugar!");
+        document.getElementById("tiempoRestante").textContent = "∞";
+      } else if (sala.jugadores && Object.keys(sala.jugadores).length >= 2) {
         console.log("Dos jugadores presentes, verificando estado del juego...");
         
         // Asegurar que el timer sea visible para modo multijugador
-        if (modoJuego === "dos") {
-          document.querySelector(".timer-display").style.display = "block";
-          console.log("Timer display configurado como visible");
-        }
+        document.querySelector(".timer-display").style.display = "block";
+        console.log("Timer display configurado como visible");
         
         if (sala.estadoJuego === "esperando") {
           await update(ref(db, `salas/${salaId}`), { estadoJuego: "jugando" });
@@ -672,20 +701,26 @@ async function iniciarJuego(nombreJugador) {
         
         // Si hay un turno establecido, actualizar la UI apropiadamente
         if (sala.turno) {
-          if (sala.turno === userId && modoJuego === "dos") {
+          if (sala.turno === userId) {
             document.querySelector("button[onclick='enviarIntento()']").disabled = false;
             console.log("Es tu turno, habilitando controles");
+            mostrarEstado("Es tu turno. Tenés 20 segundos.");
             iniciarTemporizadorTurno(modoJuego);
-          } else if (modoJuego === "dos") {
+          } else {
             document.getElementById("tiempoRestante").textContent = "-";
+            const nombreOtroJugador = jugadoresEnSala[sala.turno]?.nombre || "otro jugador";
+            mostrarEstado(`Es el turno de ${nombreOtroJugador}`, "orange");
             console.log("No es tu turno, mostrando '-' en timer");
           }
         }
+      } else {
+        // Modo multijugador pero solo hay un jugador
+        mostrarEstado("Esperando a otro jugador...", "orange");
       }
     } catch (error) {
       console.error("Error al verificar estado del juego:", error);
     }
-  }, 2000);
+  }, 1000);
 }
 
 function escucharJugadoresYActivarJuego() {
@@ -693,30 +728,48 @@ function escucharJugadoresYActivarJuego() {
     const jugadores = snap.val() || {};
     jugadoresEnSala = jugadores; // Almacenamos la lista de jugadores localmente
     const jugadoresCount = Object.keys(jugadores).length;
-    const estadoJuegoRef = ref(db, `salas/${salaId}/estadoJuego`);
     
-    const estadoSnap = await get(estadoJuegoRef);
-    const estadoActual = estadoSnap.val();
-
-    // Obtener información de la sala para verificar maxJugadores
+    // Obtener información completa de la sala
     const salaSnap = await get(ref(db, `salas/${salaId}`));
     const salaData = salaSnap.val();
+    if (!salaData) return;
+    
     const maxJugadores = salaData.maxJugadores || 2;
     const modoJuego = salaData.modoJuego || "dos";
+    const estadoActual = salaData.estadoJuego || "esperando";
 
     console.log(`Jugadores en sala: ${jugadoresCount}/${maxJugadores}, Estado actual: ${estadoActual}, Modo: ${modoJuego}`);
 
-    if (jugadoresCount === maxJugadores && estadoActual === "esperando") {
-      console.log("Iniciando juego automáticamente...");
-      await update(ref(db, `salas/${salaId}`), { estadoJuego: "jugando" });
-      const primerJugadorId = Object.keys(jugadores)[0];
-      await update(ref(db, `salas/${salaId}`), { turno: primerJugadorId });
-      console.log(`Turno asignado a: ${primerJugadorId}`);
+    if (modoJuego === "dos" && jugadoresCount === maxJugadores && estadoActual === "esperando") {
+      console.log("Condiciones cumplidas para iniciar juego automáticamente...");
       
-      // Asegurar que el timer sea visible para modo multijugador
-      if (modoJuego === "dos") {
+      try {
+        // Cambiar estado a jugando
+        await update(ref(db, `salas/${salaId}`), { estadoJuego: "jugando" });
+        console.log("Estado cambiado a 'jugando'");
+        
+        // Asignar turno al primer jugador
+        const jugadoresList = Object.keys(jugadores);
+        const primerJugadorId = jugadoresList[0];
+        await update(ref(db, `salas/${salaId}`), { turno: primerJugadorId });
+        console.log(`Turno asignado a: ${primerJugadorId}`);
+        
+        // Mostrar mensaje de inicio
+        mostrarEstado("¡Juego iniciado! Esperando turno...", "green");
+        
+        // Asegurar que el timer sea visible
         document.querySelector(".timer-display").style.display = "block";
+        
+      } catch (error) {
+        console.error("Error al iniciar juego automáticamente:", error);
       }
+    } else if (modoJuego === "dos" && jugadoresCount < maxJugadores) {
+      mostrarEstado(`Esperando jugadores... (${jugadoresCount}/${maxJugadores})`, "orange");
+    }
+      
+    // Asegurar que el timer sea visible para modo multijugador
+    if (modoJuego === "dos") {
+      document.querySelector(".timer-display").style.display = "block";
     }
   });
 }
@@ -737,11 +790,38 @@ function escucharEstadoJuego() {
     // Obtener información de la sala
     const salaSnap = await get(ref(db, `salas/${salaId}`));
     const salaData = salaSnap.val();
-    const modoJuego = salaData?.modoJuego || "dos";
-    const maxJugadores = salaData?.maxJugadores || 2;
+    if (!salaData) return;
+    
+    const modoJuego = salaData.modoJuego || "dos";
+    const maxJugadores = salaData.maxJugadores || 2;
+    const turnoActual = salaData.turno;
+    
+    console.log(`Estado del juego cambió a: ${estado}, Modo: ${modoJuego}, Turno: ${turnoActual}`);
     
     if (estado === "jugando") {
       mostrarEstado(modoJuego === "solo" ? "¡Comenzá a jugar!" : "¡El juego comenzó!");
+      
+      // Asegurar que el timer sea visible para modo multijugador
+      if (modoJuego === "dos") {
+        document.querySelector(".timer-display").style.display = "block";
+      }
+      
+      // Si es el turno del usuario actual, habilitar controles
+      if (turnoActual === userId) {
+        if (modoJuego === "solo") {
+          document.querySelector("button[onclick='enviarIntento()']").disabled = false;
+          document.getElementById("tiempoRestante").textContent = "∞";
+          mostrarEstado("Es tu turno. Sin límite de tiempo.");
+        } else {
+          document.querySelector("button[onclick='enviarIntento()']").disabled = false;
+          mostrarEstado("Es tu turno. Tenés 20 segundos.");
+        }
+      } else if (modoJuego === "dos") {
+        document.querySelector("button[onclick='enviarIntento()']").disabled = true;
+        const nombreOtroJugador = jugadoresEnSala[turnoActual]?.nombre || "otro jugador";
+        mostrarEstado(`Es el turno de ${nombreOtroJugador}`, "orange");
+      }
+      
     } else if (estado === "terminado") {
       mostrarEstado("Juego terminado", "blue");
       clearInterval(timerInterval);
@@ -766,10 +846,16 @@ function escucharTurno() {
     
     console.log(`Turno actual: ${jugadorTurno}, Estado juego: ${sala.estadoJuego}, Usuario actual: ${userId}`);
 
-    // Si el juego no está en curso, no procesar el turno
-    if (sala.estadoJuego !== "jugando") {
+    // Si el juego no está en curso, no procesar el turno (excepto en modo solo)
+    if (sala.estadoJuego !== "jugando" && modoJuego !== "solo") {
       console.log("Juego no está en curso, no se procesa el turno");
       return;
+    }
+
+    // En modo solo, siempre asegurar que el juego esté en estado "jugando"
+    if (modoJuego === "solo" && sala.estadoJuego !== "jugando") {
+      console.log("Modo solo: forzando estado a 'jugando'");
+      await update(ref(db, `salas/${salaId}`), { estadoJuego: "jugando" });
     }
 
     // Asegurar que el timer sea visible para modo multijugador
@@ -778,7 +864,21 @@ function escucharTurno() {
     }
 
     if (jugadorTurno === userId) {
+      // Verificar si este jugador ya agotó sus intentos
+      const jugadorData = sala.jugadores?.[userId];
+      const intentosUsados = jugadorData?.intentosCount || 0;
+      
+      if (intentosUsados >= 10) {
+        // Este jugador ya no puede jugar, mostrar mensaje de espera
+        mostrarEstado("Has agotado tus intentos. Esperando a que termine el otro jugador...", "orange");
+        document.querySelector("button[onclick='enviarIntento()']").disabled = true;
+        clearInterval(timerInterval);
+        document.getElementById("tiempoRestante").textContent = "-";
+        return;
+      }
+      
       if (modoJuego === "solo") {
+        console.log("Modo solo: habilitando turno del usuario");
         mostrarEstado("Es tu turno. Sin límite de tiempo.");
         document.querySelector("button[onclick='enviarIntento()']").disabled = false;
         // En modo solo, no iniciar temporizador
@@ -798,6 +898,9 @@ function escucharTurno() {
       document.querySelector("button[onclick='enviarIntento()']").disabled = true;
       console.log(`Es el turno de ${nombreOtroJugador}`);
     }
+    
+    // Actualizar indicador de turno
+    actualizarIndicadorTurno();
   });
 }
 
@@ -864,10 +967,22 @@ async function contarIntentoTiempoAgotado() {
 
   // Verificar si alcanzó el máximo de intentos
   if (nuevosIntentos >= 10) {
-    await update(ref(db, `salas/${salaId}`), { estadoJuego: "terminado" });
-    juegoTerminado = true;
-    mostrarCombinacionCorrecta();
-    return;
+    // En lugar de terminar inmediatamente, verificar si es multijugador
+    const salaSnap = await get(ref(db, `salas/${salaId}`));
+    const salaData = salaSnap.val();
+    const modoJuego = salaData?.modoJuego || "dos";
+    
+    if (modoJuego === "solo") {
+      // En modo solo, terminar inmediatamente
+      await update(ref(db, `salas/${salaId}`), { estadoJuego: "terminado" });
+      juegoTerminado = true;
+      await manejarResultadoJuego("derrota_tiempo");
+      return;
+    } else {
+      // En modo multijugador, marcar que este jugador terminó y verificar si ambos terminaron
+      await verificarFinJuegoMultijugador();
+      return;
+    }
   }
 
   // Reiniciar el temporizador para el siguiente intento
@@ -909,18 +1024,31 @@ async function enviarIntento() {
   if (resultado.aciertosColorPos === 4) {
     await update(ref(db, `salas/${salaId}`), { estadoJuego: "terminado" });
     juegoTerminado = true;
-    mostrarMensajeVictoria();
+    // Usar la nueva función para manejar victoria en multijugador
+    await manejarResultadoJuego("victoria", userId);
     clearInterval(timerInterval);
     return;
   }
 
   // Verificar si alcanzó el máximo de intentos
   if (nuevosIntentos >= 10) {
-    await update(ref(db, `salas/${salaId}`), { estadoJuego: "terminado" });
-    juegoTerminado = true;
-    mostrarCombinacionCorrecta();
-    clearInterval(timerInterval);
-    return;
+    // En lugar de terminar inmediatamente, verificar si es multijugador
+    const salaSnap = await get(ref(db, `salas/${salaId}`));
+    const salaData = salaSnap.val();
+    const modoJuego = salaData?.modoJuego || "dos";
+    
+    if (modoJuego === "solo") {
+      // En modo solo, terminar inmediatamente
+      await update(ref(db, `salas/${salaId}`), { estadoJuego: "terminado" });
+      juegoTerminado = true;
+      await manejarResultadoJuego("derrota_intentos");
+      clearInterval(timerInterval);
+      return;
+    } else {
+      // En modo multijugador, marcar que este jugador terminó y verificar si ambos terminaron
+      await verificarFinJuegoMultijugador();
+      return;
+    }
   }
 
   // Limpiar selección para el siguiente intento
@@ -2906,3 +3034,240 @@ async function mostrarEstadisticasAdmin() {
 // Exponer funciones de admin globalmente
 window.eliminarSala = eliminarSala;
 window.mostrarEstadisticasAdmin = mostrarEstadisticasAdmin;
+
+// ---------------------- MEJORAS MULTIJUGADOR ------------------------
+
+// Función para actualizar el indicador de turno
+function actualizarIndicadorTurno() {
+  const indicador = document.getElementById('indicador-turno');
+  if (!indicador) return;
+
+  // Obtener información del jugador actual
+  const jugadorActual = jugadoresEnSala[jugadorTurno];
+  if (!jugadorActual) {
+    indicador.style.display = 'none';
+    return;
+  }
+
+  // Mostrar indicador solo en modo multijugador
+  const salaRef = ref(db, `salas/${salaId}`);
+  get(salaRef).then(snap => {
+    const salaData = snap.val();
+    const modoJuego = salaData?.modoJuego || "dos";
+    
+    if (modoJuego === "solo") {
+      indicador.style.display = 'none';
+      return;
+    }
+
+    indicador.style.display = 'flex';
+    
+    if (jugadorTurno === userId) {
+      indicador.innerHTML = `
+        <span class="turno-icono">🎯</span>
+        <span class="turno-texto">¡Tu turno!</span>
+      `;
+      indicador.className = 'indicador-turno mi-turno';
+    } else {
+      indicador.innerHTML = `
+        <span class="turno-icono">⏳</span>
+        <span class="turno-texto">Turno de ${jugadorActual.nombre}</span>
+      `;
+      indicador.className = 'indicador-turno turno-otro';
+    }
+  });
+}
+
+// Función para manejar el resultado del juego en multijugador
+async function manejarResultadoJuego(tipoResultado, ganadorId = null) {
+  try {
+    const salaRef = ref(db, `salas/${salaId}`);
+    const salaSnap = await get(salaRef);
+    const salaData = salaSnap.val();
+    
+    if (!salaData) return;
+    
+    const modoJuego = salaData.modoJuego || "dos";
+    const jugadores = salaData.jugadores || {};
+    
+    // En modo solo, manejar normalmente
+    if (modoJuego === "solo") {
+      if (tipoResultado === "victoria") {
+        mostrarMensajeVictoria();
+      } else {
+        mostrarCombinacionCorrecta();
+      }
+      return;
+    }
+    
+    // En modo multijugador, notificar a todos los jugadores
+    const resultadoData = {
+      tipo: tipoResultado,
+      ganador: ganadorId,
+      timestamp: Date.now(),
+      secuenciaCorrecta: secuenciaSala || salaData.secuencia
+    };
+    
+    // Guardar el resultado en Firebase para que todos los jugadores lo vean
+    await set(ref(db, `salas/${salaId}/resultado`), resultadoData);
+    
+  } catch (error) {
+    console.error("Error al manejar resultado del juego:", error);
+  }
+}
+
+// Función para escuchar resultados del juego en multijugador
+function escucharResultadosJuego() {
+  onValue(ref(db, `salas/${salaId}/resultado`), (snap) => {
+    const resultado = snap.val();
+    if (!resultado) return;
+    
+    const tipoResultado = resultado.tipo;
+    const ganadorId = resultado.ganador;
+    const secuenciaCorrecta = resultado.secuenciaCorrecta;
+    
+    // Actualizar secuencia local si es necesario
+    if (secuenciaCorrecta && !secuenciaSala) {
+      secuenciaSala = secuenciaCorrecta;
+    }
+    
+    // Determinar si este jugador ganó o perdió
+    if (tipoResultado === "victoria") {
+      if (ganadorId === userId) {
+        // Este jugador ganó
+        juegoTerminado = true;
+        mostrarMensajeVictoria();
+      } else {
+        // Este jugador perdió (el otro ganó)
+        juegoTerminado = true;
+        mostrarMensajeDerrota(`${jugadoresEnSala[ganadorId]?.nombre || 'El otro jugador'} ganó la partida`);
+      }
+    } else if (tipoResultado === "derrota_tiempo" || tipoResultado === "derrota_intentos") {
+      // Ambos jugadores perdieron
+      juegoTerminado = true;
+      mostrarCombinacionCorrecta();
+    }
+    
+    // Limpiar el timer
+    clearInterval(timerInterval);
+    
+    // Mostrar modal de revancha después de un delay
+    setTimeout(() => {
+      mostrarModalRevancha();
+    }, 3000);
+  });
+}
+
+// Función para mostrar mensaje de derrota personalizado
+function mostrarMensajeDerrota(mensajePersonalizado = null) {
+  const historial = document.getElementById("historial");
+  
+  // Crear mensaje de derrota
+  const mensajeDiv = document.createElement("div");
+  mensajeDiv.className = "mensaje-derrota";
+  
+  const icono = document.createElement("div");
+  icono.className = "icono-derrota";
+  icono.innerHTML = "😔";
+  
+  const texto = document.createElement("div");
+  texto.className = "texto-derrota";
+  texto.innerHTML = mensajePersonalizado || "¡Mejor suerte la próxima vez!";
+  
+  mensajeDiv.appendChild(icono);
+  mensajeDiv.appendChild(texto);
+  
+  historial.appendChild(mensajeDiv);
+  historial.scrollTop = historial.scrollHeight;
+  
+  // Reproducir sonido de derrota
+  reproducirSonidoDerrota();
+}
+
+// Función para mostrar modal de revancha mejorado
+async function mostrarModalRevancha() {
+  // Verificar si el juego está terminado
+  if (!juegoTerminado) return;
+  
+  // Obtener información de la sala
+  const salaSnap = await get(ref(db, `salas/${salaId}`));
+  const salaData = salaSnap.val();
+  const modoJuego = salaData?.modoJuego || "dos";
+  
+  // En modo multijugador, asegurar que el modal aparezca para ambos jugadores
+  if (modoJuego !== "solo") {
+    // Escuchar votos de revancha
+    escucharVotosRevancha();
+  }
+  
+  // Mostrar el modal de revancha
+  await mostrarBotonRevancha();
+}
+
+// Función para verificar si el juego debe terminar en multijugador
+async function verificarFinJuegoMultijugador() {
+  try {
+    const salaRef = ref(db, `salas/${salaId}`);
+    const salaSnap = await get(salaRef);
+    const salaData = salaSnap.val();
+    
+    if (!salaData || !salaData.jugadores) return;
+    
+    const jugadores = Object.keys(salaData.jugadores);
+    let todosTerminaron = true;
+    let jugadoresConIntentos = [];
+    
+    console.log("=== VERIFICANDO FIN DE JUEGO MULTIJUGADOR ===");
+    
+    // Verificar el estado de todos los jugadores
+    for (const jugadorId of jugadores) {
+      const jugadorData = salaData.jugadores[jugadorId];
+      const intentosCount = jugadorData.intentosCount || 0;
+      console.log(`Jugador ${jugadorId}: ${intentosCount}/10 intentos`);
+      
+      if (intentosCount < 10) {
+        todosTerminaron = false;
+        jugadoresConIntentos.push(jugadorId);
+      }
+    }
+    
+    console.log(`Todos terminaron: ${todosTerminaron}`);
+    console.log(`Jugadores con intentos restantes:`, jugadoresConIntentos);
+    
+    if (todosTerminaron) {
+      // Todos los jugadores agotaron sus intentos, terminar el juego
+      console.log("Terminando juego - todos agotaron intentos");
+      await update(salaRef, { estadoJuego: "terminado" });
+      juegoTerminado = true;
+      await manejarResultadoJuego("derrota_intentos");
+      clearInterval(timerInterval);
+    } else {
+      // Aún hay jugadores con intentos disponibles
+      const miData = salaData.jugadores[userId];
+      const misIntentos = miData?.intentosCount || 0;
+      
+      console.log(`Mis intentos: ${misIntentos}/10`);
+      
+      if (misIntentos >= 10) {
+        // Este jugador agotó sus intentos
+        console.log("He agotado mis intentos, buscando siguiente jugador");
+        mostrarEstado("Has agotado tus intentos. Esperando a que termine el otro jugador...", "orange");
+        document.querySelector("button[onclick='enviarIntento()']").disabled = true;
+        clearInterval(timerInterval);
+        
+        // Encontrar el siguiente jugador que puede continuar
+        const siguienteJugador = jugadoresConIntentos.find(id => id !== userId);
+        
+        if (siguienteJugador) {
+          console.log(`Cambiando turno inmediatamente a: ${siguienteJugador}`);
+          await update(ref(db, `salas/${salaId}`), { turno: siguienteJugador });
+        } else {
+          console.log("No hay siguiente jugador disponible");
+        }
+      }
+    }
+    
+  } catch (error) {
+    console.error("Error al verificar fin del juego:", error);
+  }
+}

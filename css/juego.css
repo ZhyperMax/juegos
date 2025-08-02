@@ -79,6 +79,35 @@
   font-size: 13px;
 }
 
+/* Indicador de turno */
+.indicador-turno {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  animation: slideIn 0.3s ease;
+}
+
+.indicador-turno.turno-oponente {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+  .indicador-turno {
+    top: 60px;
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+}
+
 /* Instrucciones del juego */
 .game-instruction {
   background: #f8f9fa;

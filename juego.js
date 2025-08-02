@@ -33,6 +33,197 @@ let juegoTerminado = false; // Flag para controlar el estado del juego
 let inicioPartida = null; // Timestamp de inicio de la partida para calcular tiempo
 let puntuacionJugador = 0; // Puntuación actual del jugador
 
+// ---------------------- SISTEMA DE SONIDOS ------------------------
+
+// Configuración de sonidos
+let audioContext;
+let sonidosHabilitados = true;
+
+// Inicializar contexto de audio
+function inicializarAudio() {
+  try {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  } catch (error) {
+    console.warn("Web Audio API no soportada:", error);
+    sonidosHabilitados = false;
+  }
+}
+
+// Función para crear y reproducir sonidos sintéticos
+function reproducirSonido(tipo) {
+  if (!sonidosHabilitados || !audioContext) return;
+  
+  try {
+    const gainNode = audioContext.createGain();
+    const oscillator = audioContext.createOscillator();
+    
+    gainNode.connect(audioContext.destination);
+    oscillator.connect(gainNode);
+    
+    const ahora = audioContext.currentTime;
+    
+    switch (tipo) {
+      case 'click':
+        // Sonido de click suave
+        oscillator.frequency.setValueAtTime(800, ahora);
+        oscillator.frequency.exponentialRampToValueAtTime(600, ahora + 0.1);
+        gainNode.gain.setValueAtTime(0.1, ahora);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ahora + 0.1);
+        oscillator.type = 'sine';
+        oscillator.start(ahora);
+        oscillator.stop(ahora + 0.1);
+        break;
+        
+      case 'acierto':
+        // Sonido de acierto (nota ascendente)
+        oscillator.frequency.setValueAtTime(440, ahora);
+        oscillator.frequency.exponentialRampToValueAtTime(880, ahora + 0.3);
+        gainNode.gain.setValueAtTime(0.15, ahora);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ahora + 0.3);
+        oscillator.type = 'sine';
+        oscillator.start(ahora);
+        oscillator.stop(ahora + 0.3);
+        break;
+        
+      case 'error':
+        // Sonido de error (nota descendente)
+        oscillator.frequency.setValueAtTime(300, ahora);
+        oscillator.frequency.exponentialRampToValueAtTime(150, ahora + 0.2);
+        gainNode.gain.setValueAtTime(0.1, ahora);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ahora + 0.2);
+        oscillator.type = 'sawtooth';
+        oscillator.start(ahora);
+        oscillator.stop(ahora + 0.2);
+        break;
+        
+      case 'victoria':
+        // Melodía de victoria
+        const frecuencias = [523, 659, 784, 1047]; // Do, Mi, Sol, Do octava
+        frecuencias.forEach((freq, index) => {
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          
+          osc.connect(gain);
+          gain.connect(audioContext.destination);
+          
+          osc.frequency.setValueAtTime(freq, ahora + index * 0.15);
+          gain.gain.setValueAtTime(0.15, ahora + index * 0.15);
+          gain.gain.exponentialRampToValueAtTime(0.01, ahora + index * 0.15 + 0.3);
+          
+          osc.type = 'sine';
+          osc.start(ahora + index * 0.15);
+          osc.stop(ahora + index * 0.15 + 0.3);
+        });
+        break;
+        
+      case 'derrota':
+        // Sonido de derrota (acorde descendente)
+        const frecuenciasDerrota = [330, 277, 220, 165]; // Mi, Do#, La, Mi grave
+        frecuenciasDerrota.forEach((freq, index) => {
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          
+          osc.connect(gain);
+          gain.connect(audioContext.destination);
+          
+          osc.frequency.setValueAtTime(freq, ahora + index * 0.1);
+          gain.gain.setValueAtTime(0.1, ahora + index * 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.01, ahora + index * 0.1 + 0.4);
+          
+          osc.type = 'sine';
+          osc.start(ahora + index * 0.1);
+          osc.stop(ahora + index * 0.1 + 0.4);
+        });
+        break;
+        
+      case 'turno':
+        // Sonido suave para indicar turno
+        oscillator.frequency.setValueAtTime(660, ahora);
+        oscillator.frequency.setValueAtTime(880, ahora + 0.1);
+        gainNode.gain.setValueAtTime(0.08, ahora);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ahora + 0.2);
+        oscillator.type = 'sine';
+        oscillator.start(ahora);
+        oscillator.stop(ahora + 0.2);
+        break;
+        
+      case 'tiempo':
+        // Sonido de advertencia de tiempo
+        oscillator.frequency.setValueAtTime(1000, ahora);
+        gainNode.gain.setValueAtTime(0.1, ahora);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ahora + 0.1);
+        oscillator.type = 'square';
+        oscillator.start(ahora);
+        oscillator.stop(ahora + 0.1);
+        break;
+        
+      case 'notificacion':
+        // Sonido suave de notificación
+        oscillator.frequency.setValueAtTime(800, ahora);
+        oscillator.frequency.setValueAtTime(1000, ahora + 0.05);
+        oscillator.frequency.setValueAtTime(800, ahora + 0.1);
+        gainNode.gain.setValueAtTime(0.06, ahora);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ahora + 0.15);
+        oscillator.type = 'sine';
+        oscillator.start(ahora);
+        oscillator.stop(ahora + 0.15);
+        break;
+    }
+  } catch (error) {
+    console.warn("Error al reproducir sonido:", error);
+  }
+}
+
+// Función para alternar sonidos
+function alternarSonidos() {
+  sonidosHabilitados = !sonidosHabilitados;
+  const estado = sonidosHabilitados ? "habilitados" : "deshabilitados";
+  mostrarEstado(`🔊 Sonidos ${estado}`, sonidosHabilitados ? "green" : "orange");
+  
+  // Actualizar el botón visualmente
+  const btnSonido = document.getElementById('sonidoBtn');
+  if (btnSonido) {
+    const icono = btnSonido.querySelector('.sonido-icon');
+    if (sonidosHabilitados) {
+      btnSonido.classList.remove('sonidos-deshabilitados');
+      icono.textContent = '🔊';
+    } else {
+      btnSonido.classList.add('sonidos-deshabilitados');
+      icono.textContent = '🔇';
+    }
+  }
+  
+  if (sonidosHabilitados) {
+    reproducirSonido('notificacion');
+  }
+  
+  // Guardar preferencia en localStorage
+  localStorage.setItem('sonidosHabilitados', sonidosHabilitados);
+}
+
+// Cargar preferencia de sonidos al iniciar
+function cargarPreferenciaSonidos() {
+  const preferencia = localStorage.getItem('sonidosHabilitados');
+  if (preferencia !== null) {
+    sonidosHabilitados = preferencia === 'true';
+  }
+  
+  // Actualizar el botón según la preferencia cargada
+  setTimeout(() => {
+    const btnSonido = document.getElementById('sonidoBtn');
+    if (btnSonido) {
+      const icono = btnSonido.querySelector('.sonido-icon');
+      if (sonidosHabilitados) {
+        btnSonido.classList.remove('sonidos-deshabilitados');
+        icono.textContent = '🔊';
+      } else {
+        btnSonido.classList.add('sonidos-deshabilitados');
+        icono.textContent = '🔇';
+      }
+    }
+  }, 100);
+}
+
 // ---------------------- FUNCIONES BÁSICAS ------------------------
 
 function mostrarEstado(msg, color = "green") {
@@ -879,12 +1070,14 @@ function escucharTurno() {
       
       if (modoJuego === "solo") {
         console.log("Modo solo: habilitando turno del usuario");
+        reproducirSonido('turno'); // Sonido de turno en modo solo
         mostrarEstado("Es tu turno. Sin límite de tiempo.");
         document.querySelector("button[onclick='enviarIntento()']").disabled = false;
         // En modo solo, no iniciar temporizador
         clearInterval(timerInterval);
         document.getElementById("tiempoRestante").textContent = "∞";
       } else {
+        reproducirSonido('turno'); // Sonido de turno en multijugador
         mostrarEstado("Es tu turno. Tenés 20 segundos.");
         document.querySelector("button[onclick='enviarIntento()']").disabled = false;
         iniciarTemporizadorTurno(modoJuego);
@@ -919,8 +1112,15 @@ function iniciarTemporizadorTurno(modoJuego = "dos") {
   timerInterval = setInterval(async () => {
     tiempoRestante--;
     document.getElementById("tiempoRestante").textContent = tiempoRestante;
+    
+    // Sonido de advertencia cuando quedan 5 segundos o menos
+    if (tiempoRestante <= 5 && tiempoRestante > 0) {
+      reproducirSonido('tiempo');
+    }
+    
     if (tiempoRestante <= 0) {
       clearInterval(timerInterval);
+      reproducirSonido('error'); // Sonido de tiempo agotado
       mostrarEstado("Se acabó el tiempo", "red");
       
       // Verificar si es modo solo
@@ -1022,12 +1222,20 @@ async function enviarIntento() {
   actualizarContadorIntentosSupeior(nuevosIntentos);
 
   if (resultado.aciertosColorPos === 4) {
+    reproducirSonido('victoria'); // Sonido de victoria
     await update(ref(db, `salas/${salaId}`), { estadoJuego: "terminado" });
     juegoTerminado = true;
     // Usar la nueva función para manejar victoria en multijugador
     await manejarResultadoJuego("victoria", userId);
     clearInterval(timerInterval);
     return;
+  }
+
+  // Reproducir sonido según el resultado
+  if (resultado.aciertosColorPos > 0 || resultado.aciertosColor > 0) {
+    reproducirSonido('acierto'); // Sonido de acierto parcial
+  } else {
+    reproducirSonido('error'); // Sonido de error (sin aciertos)
   }
 
   // Verificar si alcanzó el máximo de intentos
@@ -1732,6 +1940,7 @@ function mostrarColores() {
     btn.style.position = "relative"; // Para posicionar el número
     
     btn.onclick = () => {
+      reproducirSonido('click'); // Sonido de click al seleccionar color
       const colorNombre = convertirRGBaNombre(btn.style.backgroundColor);
       
       if (btn.classList.contains("selected")) {
@@ -1931,16 +2140,28 @@ function enviarMensaje() {
 
 function escucharChat() {
   const contenedor = document.getElementById("mensajes");
+  let mensajesAnteriores = 0;
+  
   onValue(ref(db, `salas/${salaId}/chat`), snap => {
     const data = snap.val() || {};
+    const mensajes = Object.values(data).sort((a, b) => a.timestamp - b.timestamp);
+    
+    // Reproducir sonido si hay nuevos mensajes
+    if (mensajes.length > mensajesAnteriores && mensajesAnteriores > 0) {
+      // Solo reproducir si el último mensaje no es del usuario actual
+      const ultimoMensaje = mensajes[mensajes.length - 1];
+      if (ultimoMensaje && ultimoMensaje.usuario !== nombreUsuario) {
+        reproducirSonido('notificacion');
+      }
+    }
+    mensajesAnteriores = mensajes.length;
+    
     contenedor.innerHTML = "";
-    Object.values(data)
-      .sort((a, b) => a.timestamp - b.timestamp)
-      .forEach(m => {
-        const div = document.createElement("div");
-        div.innerHTML = `<b>${m.usuario}:</b> ${m.texto}`;
-        contenedor.appendChild(div);
-      });
+    mensajes.forEach(m => {
+      const div = document.createElement("div");
+      div.innerHTML = `<b>${m.usuario}:</b> ${m.texto}`;
+      contenedor.appendChild(div);
+    });
     contenedor.scrollTop = contenedor.scrollHeight;
   });
 }
@@ -2693,6 +2914,10 @@ async function cargarEstadisticasPersonales() {
 }
 
 window.onload = () => {
+  // Inicializar sistema de audio
+  inicializarAudio();
+  cargarPreferenciaSonidos();
+  
   // Si no hay usuario, crear uno temporal para que el juego funcione
   if (!userId || !nombreUsuario) {
     const numeroAleatorio = Math.floor(Math.random() * 1000);
@@ -3093,8 +3318,10 @@ async function manejarResultadoJuego(tipoResultado, ganadorId = null) {
     // En modo solo, manejar normalmente
     if (modoJuego === "solo") {
       if (tipoResultado === "victoria") {
+        reproducirSonido('victoria'); // Sonido de victoria en modo solo
         mostrarMensajeVictoria();
       } else {
+        reproducirSonido('derrota'); // Sonido de derrota en modo solo
         mostrarCombinacionCorrecta();
       }
       return;

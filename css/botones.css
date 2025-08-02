@@ -233,6 +233,49 @@
   font-size: 13px;
 }
 
+/* Botón de sonidos */
+.btn-sonido {
+  background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+  color: white;
+  position: fixed;
+  top: 180px;
+  left: 15px;
+  z-index: 1000;
+  border-radius: 25px;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-sonido:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(156, 39, 176, 0.6);
+}
+
+.btn-sonido.sonidos-deshabilitados {
+  background: linear-gradient(135deg, #757575 0%, #616161 100%);
+  box-shadow: 0 4px 15px rgba(117, 117, 117, 0.4);
+}
+
+.btn-sonido.sonidos-deshabilitados:hover {
+  box-shadow: 0 8px 25px rgba(117, 117, 117, 0.6);
+}
+
+.sonido-icon {
+  font-size: 18px;
+}
+
+.sonido-text {
+  font-size: 13px;
+}
+
 /* Responsive para móviles */
 @media (max-width: 768px) {
   .btn-info {
@@ -240,11 +283,16 @@
     font-size: 12px;
   }
   
-  .info-text {
+  .btn-sonido {
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+  
+  .info-text, .sonido-text {
     display: none;
   }
   
-  .info-icon {
+  .info-icon, .sonido-icon {
     font-size: 18px;
   }
 }

@@ -91,6 +91,15 @@ Un juego interactivo multijugador donde debes adivinar la secuencia correcta de 
 - **Lista en tiempo real**: Salas disponibles actualizadas automáticamente
 - **Filtros inteligentes**: Solo muestra salas con espacio disponible
 - **Información detallada**: Jugadores actuales/máximos por sala
+- **🔗 Sistema de invitaciones**: Comparte salas con enlaces directos
+
+#### 🔗 Sistema de Invitaciones
+- **Enlaces de invitación**: Genera URLs únicas para cada sala multijugador
+- **Botón "Compartir Sala"**: Visible solo en modo multijugador
+- **Compartir en redes sociales**: WhatsApp, Facebook, Telegram
+- **Copiado al portapapeles**: Un click para copiar el enlace
+- **Auto-ingreso**: Los invitados se unen automáticamente después del registro/login
+- **Detección inteligente**: Reconoce códigos de sala en la URL automáticamente
 
 #### 👤 Gestión de Jugadores
 - **Identificación clara**: Marcador "(Tú)" para el jugador actual
@@ -292,6 +301,9 @@ Adivinar la secuencia secreta de 4 colores únicos en máximo 10 intentos.
 - ✅ Chat en tiempo real
 - ✅ Lista de salas disponibles
 - ✅ Sincronización automática de estados
+- ✅ **Sistema de invitaciones por enlace**
+- ✅ **Compartir en redes sociales (WhatsApp, Facebook, Telegram)**
+- ✅ **Auto-ingreso desde enlaces de invitación**
 
 **📱 Experiencia**
 - ✅ Diseño responsivo
@@ -332,9 +344,9 @@ Adivinar la secuencia secreta de 4 colores únicos en máximo 10 intentos.
 - [ ] **Colores personalizados**: Selección de paleta por sala
 
 ### 🌟 Funciones Sociales
+- [x] **Invitaciones**: ✅ Compartir salas por link directo y redes sociales
 - [ ] **Perfiles de usuario**: Nombres persistentes y avatares
 - [ ] **Sistema de amigos**: Lista de contactos frecuentes
-- [ ] **Invitaciones**: Compartir salas por link o código QR
 - [ ] **Mensajes privados**: Chat directo entre jugadores
 
 ### 📱 Mejoras Técnicas

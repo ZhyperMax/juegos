@@ -184,6 +184,14 @@ async function registrarUsuario() {
     setTimeout(() => {
       cerrarModalAuth();
       mostrarBienvenida();
+      
+      // Verificar si hay una invitación pendiente
+      const salaInvitacion = localStorage.getItem('salaInvitacion');
+      if (salaInvitacion) {
+        setTimeout(() => {
+          unirseSalaDirecta(salaInvitacion);
+        }, 1000);
+      }
     }, 1500);
     
   } catch (error) {
@@ -264,6 +272,14 @@ async function iniciarSesion() {
     setTimeout(() => {
       cerrarModalAuth();
       mostrarBienvenida();
+      
+      // Verificar si hay una invitación pendiente
+      const salaInvitacion = localStorage.getItem('salaInvitacion');
+      if (salaInvitacion) {
+        setTimeout(() => {
+          unirseSalaDirecta(salaInvitacion);
+        }, 1000);
+      }
     }, 1500);
     
   } catch (error) {
@@ -591,9 +607,11 @@ async function iniciarJuego(nombreJugador) {
   if (modoJuego === "solo") {
     chatContainer.style.display = "none";
     timerDisplay.style.display = "none";
+    document.getElementById("compartirSalaBtn").style.display = "none";
   } else {
     chatContainer.style.display = "flex";
     timerDisplay.style.display = "block";
+    document.getElementById("compartirSalaBtn").style.display = "inline-flex";
   }
   
   mostrarColores();
@@ -619,6 +637,45 @@ async function iniciarJuego(nombreJugador) {
 
   onDisconnect(ref(db, `salas/${salaId}/jugadores/${userId}`)).remove();
   document.querySelector("button[onclick='enviarIntento()']").disabled = true;
+  mostrarBotonSalir(true);
+  ocultarFormularios();
+  
+  // Verificar estado del juego después de unirse
+  setTimeout(async () => {
+    try {
+      const salaSnap = await get(ref(db, `salas/${salaId}`));
+      const sala = salaSnap.val();
+      
+      if (sala && sala.jugadores && Object.keys(sala.jugadores).length >= 2) {
+        console.log("Dos jugadores presentes, verificando estado del juego...");
+        
+        // Asegurar que el timer sea visible para modo multijugador
+        if (modoJuego === "dos") {
+          document.querySelector(".timer-display").style.display = "block";
+          console.log("Timer display configurado como visible");
+        }
+        
+        if (sala.estadoJuego === "esperando") {
+          await update(ref(db, `salas/${salaId}`), { estadoJuego: "jugando" });
+          console.log("Estado del juego actualizado a 'jugando'");
+        }
+        
+        // Si hay un turno establecido, actualizar la UI apropiadamente
+        if (sala.turno) {
+          if (sala.turno === userId && modoJuego === "dos") {
+            document.querySelector("button[onclick='enviarIntento()']").disabled = false;
+            console.log("Es tu turno, habilitando controles");
+            iniciarTemporizadorTurno(modoJuego);
+          } else if (modoJuego === "dos") {
+            document.getElementById("tiempoRestante").textContent = "-";
+            console.log("No es tu turno, mostrando '-' en timer");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error al verificar estado del juego:", error);
+    }
+  }, 2000);
 }
 
 function escucharJugadoresYActivarJuego() {
@@ -635,11 +692,21 @@ function escucharJugadoresYActivarJuego() {
     const salaSnap = await get(ref(db, `salas/${salaId}`));
     const salaData = salaSnap.val();
     const maxJugadores = salaData.maxJugadores || 2;
+    const modoJuego = salaData.modoJuego || "dos";
+
+    console.log(`Jugadores en sala: ${jugadoresCount}/${maxJugadores}, Estado actual: ${estadoActual}, Modo: ${modoJuego}`);
 
     if (jugadoresCount === maxJugadores && estadoActual === "esperando") {
+      console.log("Iniciando juego automáticamente...");
       await update(ref(db, `salas/${salaId}`), { estadoJuego: "jugando" });
       const primerJugadorId = Object.keys(jugadores)[0];
       await update(ref(db, `salas/${salaId}`), { turno: primerJugadorId });
+      console.log(`Turno asignado a: ${primerJugadorId}`);
+      
+      // Asegurar que el timer sea visible para modo multijugador
+      if (modoJuego === "dos") {
+        document.querySelector(".timer-display").style.display = "block";
+      }
     }
   });
 }
@@ -683,9 +750,22 @@ function escucharTurno() {
     jugadorTurno = snap.val();
     const salaSnap = await get(ref(db, `salas/${salaId}`));
     const sala = salaSnap.val();
-    if (!sala || sala.estadoJuego !== "jugando") return;
+    if (!sala) return;
 
     const modoJuego = sala.modoJuego || "dos";
+    
+    console.log(`Turno actual: ${jugadorTurno}, Estado juego: ${sala.estadoJuego}, Usuario actual: ${userId}`);
+
+    // Si el juego no está en curso, no procesar el turno
+    if (sala.estadoJuego !== "jugando") {
+      console.log("Juego no está en curso, no se procesa el turno");
+      return;
+    }
+
+    // Asegurar que el timer sea visible para modo multijugador
+    if (modoJuego === "dos") {
+      document.querySelector(".timer-display").style.display = "block";
+    }
 
     if (jugadorTurno === userId) {
       if (modoJuego === "solo") {
@@ -698,6 +778,7 @@ function escucharTurno() {
         mostrarEstado("Es tu turno. Tenés 20 segundos.");
         document.querySelector("button[onclick='enviarIntento()']").disabled = false;
         iniciarTemporizadorTurno(modoJuego);
+        console.log("Es tu turno, timer iniciado");
       }
     } else {
       const nombreOtroJugador = jugadoresEnSala[jugadorTurno]?.nombre || "otro jugador";
@@ -705,6 +786,7 @@ function escucharTurno() {
       clearInterval(timerInterval);
       document.getElementById("tiempoRestante").textContent = "-";
       document.querySelector("button[onclick='enviarIntento()']").disabled = true;
+      console.log(`Es el turno de ${nombreOtroJugador}`);
     }
   });
 }
@@ -2492,6 +2574,7 @@ document.addEventListener("keydown", function(event) {
     cerrarModalInfo();
     cerrarModalRanking();
     cerrarModalAuth();
+    cerrarModalCompartir();
   }
 });
 
@@ -2499,4 +2582,195 @@ document.addEventListener("keydown", function(event) {
 window.registrarUsuario = registrarUsuario;
 window.iniciarSesion = iniciarSesion;
 window.cambiarPestanaAuth = cambiarPestanaAuth;
+
+// Sistema de Invitaciones
+function compartirSala() {
+  const linkInvitacion = `${window.location.origin}${window.location.pathname}?sala=${salaId}`;
+  document.getElementById("linkInvitacion").value = linkInvitacion;
+  document.getElementById("modalCompartir").style.display = "flex";
+}
+
+function cerrarModalCompartir() {
+  document.getElementById("modalCompartir").style.display = "none";
+}
+
+async function copiarLink() {
+  const linkInput = document.getElementById("linkInvitacion");
+  const btnCopiar = document.querySelector(".btn-copiar");
+  const textoOriginal = btnCopiar.innerHTML;
+  
+  try {
+    await navigator.clipboard.writeText(linkInput.value);
+    btnCopiar.innerHTML = '<span class="copiar-icon">✅</span><span class="copiar-text">¡Copiado!</span>';
+    btnCopiar.style.background = "linear-gradient(135deg, #28a745 0%, #20c997 100%)";
+    
+    setTimeout(() => {
+      btnCopiar.innerHTML = textoOriginal;
+      btnCopiar.style.background = "linear-gradient(135deg, #17a2b8 0%, #138496 100%)";
+    }, 2000);
+  } catch (error) {
+    // Fallback para navegadores que no soportan clipboard API
+    linkInput.select();
+    document.execCommand('copy');
+    btnCopiar.innerHTML = '<span class="copiar-icon">✅</span><span class="copiar-text">¡Copiado!</span>';
+    btnCopiar.style.background = "linear-gradient(135deg, #28a745 0%, #20c997 100%)";
+    
+    setTimeout(() => {
+      btnCopiar.innerHTML = textoOriginal;
+      btnCopiar.style.background = "linear-gradient(135deg, #17a2b8 0%, #138496 100%)";
+    }, 2000);
+  }
+}
+
+function compartirWhatsApp() {
+  const link = document.getElementById("linkInvitacion").value;
+  const mensaje = `¡Hola! Te invito a jugar Adivina Colores Online conmigo. Únete a mi sala: ${link}`;
+  const urlWhatsApp = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+  window.open(urlWhatsApp, '_blank');
+}
+
+function compartirFacebook() {
+  const link = document.getElementById("linkInvitacion").value;
+  const urlFacebook = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`;
+  window.open(urlFacebook, '_blank');
+}
+
+function compartirTelegram() {
+  const link = document.getElementById("linkInvitacion").value;
+  const mensaje = `¡Hola! Te invito a jugar Adivina Colores Online conmigo. Únete a mi sala: ${link}`;
+  const urlTelegram = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(mensaje)}`;
+  window.open(urlTelegram, '_blank');
+}
+
+// Detectar código de sala en URL al cargar
+function verificarInvitacionEnURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const codigoSala = urlParams.get('sala');
+  
+  if (codigoSala) {
+    // Guardar código de sala para usarlo después del login/registro
+    localStorage.setItem('salaInvitacion', codigoSala);
+    
+    // Si ya está autenticado, unirse directamente
+    if (userId) {
+      unirseSalaDirecta(codigoSala);
+    }
+    // Si no está autenticado, se manejará después del login
+  }
+}
+
+async function unirseSalaDirecta(codigo) {
+  try {
+    // Verificar que la sala existe
+    const salaSnapshot = await get(ref(db, `salas/${codigo}`));
+    if (!salaSnapshot.exists()) {
+      mostrarEstado("La sala no existe o ha expirado", "red");
+      return;
+    }
+    
+    const salaInfo = salaSnapshot.val();
+    const jugadoresList = salaInfo.jugadores || {};
+    const totalJugadores = Object.keys(jugadoresList).length;
+    const maximoJugadores = salaInfo.modoJuego === "solo" ? 1 : 2;
+    
+    if (totalJugadores >= maximoJugadores) {
+      mostrarEstado("La sala está llena", "red");
+      return;
+    }
+    
+    if (jugadoresList[userId]) {
+      mostrarEstado("Ya estás en esta sala", "orange");
+      return;
+    }
+    
+    // Unirse a la sala
+    salaId = codigo;
+    const jugadorNombre = document.getElementById("currentUserName").textContent;
+    
+    await set(ref(db, `salas/${salaId}/jugadores/${userId}`), {
+      nombre: jugadorNombre,
+      intentos: {},
+      intentosCount: 0
+    });
+    
+    // Verificar y activar el estado del juego si es necesario
+    const salaActualizada = await get(ref(db, `salas/${salaId}`));
+    const datosActualizados = salaActualizada.val();
+    const jugadoresActualizados = datosActualizados.jugadores || {};
+    const conteoJugadores = Object.keys(jugadoresActualizados).length;
+    const limiteJugadores = datosActualizados.maxJugadores || (datosActualizados.modoJuego === "solo" ? 1 : 2);
+    const estadoActual = datosActualizados.estadoJuego;
+    
+    // Si tenemos suficientes jugadores y el juego está esperando, activarlo
+    if (conteoJugadores >= limiteJugadores && estadoActual === "esperando") {
+      await update(ref(db, `salas/${salaId}`), { estadoJuego: "jugando" });
+      
+      // Establecer el primer jugador como turno inicial si no hay turno
+      if (!datosActualizados.turno) {
+        const primerJugadorId = Object.keys(jugadoresActualizados)[0];
+        await update(ref(db, `salas/${salaId}`), { turno: primerJugadorId });
+      }
+    }
+    
+    // Limpiar URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+    localStorage.removeItem('salaInvitacion');
+    
+    // Iniciar juego y asegurar que los listeners estén activos
+    iniciarJuego(jugadorNombre);
+    mostrarBotonSalir(true); // Asegurar que el botón salir esté visible
+    ocultarFormularios(); // Ocultar formularios de unión
+    mostrarEstado(`Te uniste a la sala ${salaId}`, "green");
+    
+    // Dar tiempo para que Firebase se sincronice y los listeners se activen
+    setTimeout(async () => {
+      // Verificar el estado del juego después de unirse
+      const salaSnapFinal = await get(ref(db, `salas/${salaId}`));
+      const salaDataFinal = salaSnapFinal.val();
+      
+      // Forzar actualización del estado de juego para ambos jugadores
+      if (salaDataFinal.estadoJuego === "jugando") {
+        const modoJuego = salaDataFinal.modoJuego || "dos";
+        
+        // Asegurar que el temporizador y controles estén configurados correctamente
+        if (modoJuego === "dos") {
+          document.getElementById("compartirSalaBtn").style.display = "inline-flex";
+          document.querySelector(".timer-display").style.display = "block";
+          document.getElementById("chat-container").style.display = "flex";
+        }
+        
+        // Si es el turno del jugador, habilitar controles
+        if (salaDataFinal.turno === userId) {
+          document.querySelector("button[onclick='enviarIntento()']").disabled = false;
+          if (modoJuego === "dos") {
+            mostrarEstado("Es tu turno. Tenés 20 segundos.");
+            iniciarTemporizadorTurno(modoJuego);
+          } else {
+            mostrarEstado("Es tu turno. Sin límite de tiempo.");
+          }
+        } else {
+          document.querySelector("button[onclick='enviarIntento()']").disabled = true;
+          mostrarEstado("Esperando tu turno...");
+        }
+      }
+    }, 1500);
+    
+  } catch (error) {
+    console.error("Error al unirse a la sala:", error);
+    mostrarEstado("Error al unirse a la sala", "red");
+  }
+}
+
+// Modificar la función de inicialización para verificar invitaciones
+window.addEventListener('load', () => {
+  verificarInvitacionEnURL();
+});
+
+// Exponer funciones de compartir globalmente
+window.compartirSala = compartirSala;
+window.cerrarModalCompartir = cerrarModalCompartir;
+window.copiarLink = copiarLink;
+window.compartirWhatsApp = compartirWhatsApp;
+window.compartirFacebook = compartirFacebook;
+window.compartirTelegram = compartirTelegram;
 window.cerrarSesion = cerrarSesion;

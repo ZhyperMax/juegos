@@ -318,6 +318,50 @@ h1 {
   font-weight: 400;
 }
 
+/* Información de sala */
+.sala-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+/* Botón de compartir sala */
+.btn-compartir {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-compartir:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+  background: linear-gradient(135deg, #218838 0%, #1e9ecb 100%);
+}
+
+.btn-compartir:active {
+  transform: translateY(0);
+}
+
+.compartir-icon {
+  font-size: 16px;
+}
+
+.compartir-text {
+  font-size: 13px;
+}
+
 /* Instrucciones del juego */
 .game-instruction {
   background: #f8f9fa;
@@ -2558,6 +2602,141 @@ hr {
   .logout-btn {
     font-size: 9px;
     padding: 3px 6px;
+  }
+}
+
+/* Modal de Compartir Sala */
+.modal-compartir {
+  max-width: 500px;
+  width: 90%;
+}
+
+.compartir-info h3 {
+  color: #28a745;
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+
+.compartir-info p {
+  color: #6c757d;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.link-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+#linkInvitacion {
+  flex: 1;
+  padding: 10px 15px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  color: #495057;
+}
+
+.btn-copiar {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 15px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 80px;
+}
+
+.btn-copiar:hover {
+  background: linear-gradient(135deg, #138496 0%, #0c6674 100%);
+  transform: translateY(-2px);
+}
+
+.compartir-opciones h4 {
+  color: #495057;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+.social-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.btn-social {
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 15px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-social.whatsapp {
+  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+}
+
+.btn-social.facebook {
+  background: linear-gradient(135deg, #1877f2 0%, #166fe5 100%);
+}
+
+.btn-social.telegram {
+  background: linear-gradient(135deg, #0088cc 0%, #006699 100%);
+}
+
+.btn-social:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.compartir-nota {
+  background: #e7f3ff;
+  border: 1px solid #b8daff;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 15px;
+}
+
+.compartir-nota p {
+  margin: 0;
+  color: #004085;
+  font-size: 13px;
+}
+
+/* Responsive para modal de compartir */
+@media (max-width: 768px) {
+  .link-container {
+    flex-direction: column;
+  }
+  
+  .social-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .btn-social {
+    padding: 15px;
+    font-size: 16px;
   }
 }
 

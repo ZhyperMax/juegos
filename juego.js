@@ -20,6 +20,9 @@ let salaId = "";
 let userId = null; // Se asignará después del login/registro
 let nombreUsuario = null; // Nombre del usuario autenticado
 let pinUsuario = null; // PIN del usuario (solo en memoria durante la sesión)
+
+// Configuración de administrador - Lista de nombres admin
+const NOMBRES_ADMIN = ['beto', 'admin', 'administrador'];
 let secuenciaSala = [];
 let jugadorTurno = null;
 let timerInterval = null;
@@ -124,6 +127,13 @@ async function registrarUsuario() {
   
   if (!validarNombre(nombre)) {
     mostrarAuthStatus('El nombre debe tener 3-20 caracteres y solo usar letras, números, _ o -', 'error');
+    return;
+  }
+  
+  // Verificar que no sea un nombre reservado para admin
+  const nombreLimpio = nombre.toLowerCase().trim();
+  if (NOMBRES_ADMIN.includes(nombreLimpio)) {
+    mostrarAuthStatus('Este nombre está reservado. Elige otro nombre.', 'error');
     return;
   }
   
@@ -1689,8 +1699,16 @@ function actualizarListaSalas() {
       if (modoJuego === "dos" && jugadoresCount < maxJugadores) {
         haySalasDisponibles = true;
         const div = document.createElement("div");
-        div.innerHTML = `Sala <b>${codigo}</b> (${jugadoresCount}/${maxJugadores}) 
+        
+        let htmlSala = `Sala <b>${codigo}</b> (${jugadoresCount}/${maxJugadores}) 
           <button onclick="unirseDesdeLista('${codigo}')">Unirse</button>`;
+        
+        // Agregar botón de eliminar si eres admin
+        if (esUsuarioAdmin()) {
+          htmlSala += ` <button onclick="eliminarSala('${codigo}')" style="background-color: #dc3545; margin-left: 10px;">🗑️ Eliminar</button>`;
+        }
+        
+        div.innerHTML = htmlSala;
         contenedor.appendChild(div);
       }
     }
@@ -1702,8 +1720,11 @@ function actualizarListaSalas() {
 }
 
 async function unirseDesdeLista(codigo) {
-  const nombre = document.getElementById("nombreLista").value.trim();
-  if (!nombre) return alert("Ingresá tu nombre");
+  // Usar el nombre de usuario actual
+  if (!nombreUsuario) {
+    alert("Error: No hay usuario activo");
+    return;
+  }
   
   salaId = codigo;
   const salaSnap = await get(ref(db, "salas/" + salaId));
@@ -1715,13 +1736,13 @@ async function unirseDesdeLista(codigo) {
   if (modoJuego === "solo") return mostrarEstado("Esta sala es solo para un jugador", "red");
 
   await set(ref(db, `salas/${salaId}/jugadores/${userId}`), {
-    nombre,
+    nombre: nombreUsuario,
     intentosCount: 0,
     intentos: {}
   });
 
   mostrarEstado("Unido a sala " + salaId);
-  await iniciarJuego(nombre);
+  await iniciarJuego(nombreUsuario);
   ocultarFormularios();
   mostrarBotonSalir(true);
   actualizarListaSalas();
@@ -2544,9 +2565,37 @@ async function cargarEstadisticasPersonales() {
 }
 
 window.onload = () => {
+  // Si no hay usuario, crear uno temporal para que el juego funcione
+  if (!userId || !nombreUsuario) {
+    const numeroAleatorio = Math.floor(Math.random() * 1000);
+    userId = `user_${Date.now()}_${numeroAleatorio}`;
+    nombreUsuario = `Jugador${numeroAleatorio}`;
+    pinUsuario = "0000";
+    
+    // Ocultar modal de auth si existe
+    const authModal = document.getElementById('authModal');
+    if (authModal) {
+      authModal.style.display = 'none';
+    }
+    
+    console.log("Usuario temporal creado:", nombreUsuario);
+  }
+  
   actualizarListaSalas();
   mostrarBotonSalir(false);
-  mostrarEstado("Listo para jugar", "green");
+  
+  // Mostrar estado con indicador de admin
+  const estadoTexto = esUsuarioAdmin() ? 
+    `Listo para jugar - Usuario: ${nombreUsuario} 👑 (ADMIN)` : 
+    `Listo para jugar - Usuario: ${nombreUsuario}`;
+  
+  mostrarEstado(estadoTexto, "green");
+  
+  // Si eres admin, mostrar estadísticas en consola
+  if (esUsuarioAdmin()) {
+    console.log("🔑 Modo administrador activado para usuario registrado: " + nombreUsuario);
+    mostrarEstadisticasAdmin();
+  }
 };
 
 // Inicialización de la página
@@ -2774,3 +2823,86 @@ window.compartirWhatsApp = compartirWhatsApp;
 window.compartirFacebook = compartirFacebook;
 window.compartirTelegram = compartirTelegram;
 window.cerrarSesion = cerrarSesion;
+
+// ====== SISTEMA DE ADMINISTRACIÓN ======
+
+// Función para verificar si el usuario actual es admin
+function esUsuarioAdmin() {
+  if (!nombreUsuario || !userId) return false;
+  
+  // Solo el usuario registrado "beto" puede ser admin
+  // No usuarios temporales ni otros
+  const nombreLimpio = nombreUsuario.toLowerCase().trim();
+  return nombreLimpio === 'beto' && userId.startsWith('user_') && !nombreUsuario.startsWith('Jugador');
+}
+
+// Función para eliminar una sala (solo admin)
+async function eliminarSala(salaIdAEliminar) {
+  if (!esUsuarioAdmin()) {
+    alert("No tienes permisos para eliminar salas");
+    return;
+  }
+  
+  if (!confirm(`¿Estás seguro de eliminar la sala ${salaIdAEliminar}?`)) {
+    return;
+  }
+  
+  try {
+    const salaRef = ref(db, `salas/${salaIdAEliminar}`);
+    await remove(salaRef);
+    
+    console.log(`Sala ${salaIdAEliminar} eliminada por admin`);
+    alert(`Sala ${salaIdAEliminar} eliminada exitosamente`);
+    
+    // Actualizar la lista de salas
+    actualizarListaSalas();
+    
+  } catch (error) {
+    console.error("Error al eliminar sala:", error);
+    alert("Error al eliminar la sala: " + error.message);
+  }
+}
+
+// Función para mostrar estadísticas de admin
+async function mostrarEstadisticasAdmin() {
+  if (!esUsuarioAdmin()) {
+    console.log("No eres admin");
+    return;
+  }
+  
+  try {
+    const salasRef = ref(db, 'salas');
+    const snapshot = await get(salasRef);
+    
+    if (snapshot.exists()) {
+      const salas = snapshot.val();
+      const totalSalas = Object.keys(salas).length;
+      let salasActivas = 0;
+      let jugadoresTotal = 0;
+      
+      Object.values(salas).forEach(sala => {
+        if (sala.estadoJuego === 'esperando' || sala.estadoJuego === 'jugando') {
+          salasActivas++;
+        }
+        if (sala.jugadores) {
+          jugadoresTotal += Object.keys(sala.jugadores).length;
+        }
+      });
+      
+      console.log(`📊 ESTADÍSTICAS ADMIN:
+      • Total de salas: ${totalSalas}
+      • Salas activas: ${salasActivas}
+      • Jugadores conectados: ${jugadoresTotal}`);
+      
+    } else {
+      console.log("No hay salas en la base de datos");
+    }
+    
+  } catch (error) {
+    console.error("Error al obtener estadísticas:", error);
+  }
+}
+
+// Exponer funciones de admin globalmente
+window.eliminarSala = eliminarSala;
+window.mostrarEstadisticasAdmin = mostrarEstadisticasAdmin;

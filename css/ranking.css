@@ -1,30 +1,40 @@
 /* ==================== ESTILOS DE RANKING ==================== */
 
+/* Modal de Ranking */
+.modal-ranking {
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
 .ranking-tabs {
   display: flex;
   margin-bottom: 20px;
-  background: #f8f9fa;
-  border-radius: 10px;
-  padding: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-bottom: 2px solid #e9ecef;
 }
 
-.ranking-tabs .tab-btn {
-  flex: 1;
+.tab-btn {
   background: none;
   border: none;
-  padding: 12px;
-  color: #6c757d;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  font-weight: 600;
+  padding: 12px 20px;
   cursor: pointer;
+  font-weight: 600;
+  color: #6c757d;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+  flex: 1;
+  font-size: 14px;
 }
 
-.ranking-tabs .tab-btn.active {
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+.tab-btn.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.tab-btn:hover:not(.active) {
+  color: #495057;
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .ranking-tab-content {
@@ -35,19 +45,172 @@
   display: block;
 }
 
-.ranking-lista {
-  max-height: 400px;
-  overflow-y: auto;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  background: white;
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .ranking-item {
   display: flex;
   align-items: center;
-  padding: 15px;
-  border-bottom: 1px solid #f1f3f4;
+  justify-content: space-between;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border-left: 4px solid #007bff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.ranking-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ranking-item.top-1 {
+  background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
+  border-left-color: #ffd700;
+  color: #333;
+}
+
+.ranking-item.top-2 {
+  background: linear-gradient(135deg, #e8e8e8 0%, #c0c0c0 100%);
+  border-left-color: #c0c0c0;
+  color: #333;
+}
+
+.ranking-item.top-3 {
+  background: linear-gradient(135deg, #cd7f32 0%, #b8860b 100%);
+  border-left-color: #cd7f32;
+  color: white;
+}
+
+.ranking-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.ranking-position {
+  font-size: 20px;
+  font-weight: bold;
+  min-width: 30px;
+}
+
+.ranking-player {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.ranking-stats {
+  text-align: right;
+}
+
+.ranking-score {
+  font-size: 18px;
+  font-weight: bold;
+  color: #28a745;
+}
+
+.ranking-details {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 2px;
+}
+
+.personal-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.history-list {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #28a745;
+}
+
+.history-date {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.history-score {
+  font-weight: bold;
+  color: #28a745;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .ranking-tabs {
+    flex-direction: column;
+  }
+  
+  .tab-btn {
+    border-bottom: none;
+    border-right: 3px solid transparent;
+  }
+  
+  .tab-btn.active {
+    border-right-color: #007bff;
+    border-bottom-color: transparent;
+  }
+  
+  .personal-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .ranking-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+  
+  .ranking-info {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
   transition: background-color 0.2s ease;
 }
 

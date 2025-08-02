@@ -42,7 +42,65 @@ body {
   box-sizing: border-box;
 }
 
+/* Responsive adjustments for layout */
+@media (max-width: 768px) {
+  .logo-container {
+    position: fixed;
+    top: 50px;
+    left: 10px;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 150px;
+  }
+  
+  .logo {
+    width: 45px;
+  }
+  
+  .app-container {
+    padding: 120px 15px 20px 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-container {
+    top: 45px;
+    left: 5px;
+    gap: 6px;
+  }
+  
+  .logo {
+    width: 40px;
+  }
+  
+  .app-container {
+    padding: 110px 10px 20px 10px;
+  }
+}
+
 h1 {
   text-align: center;
   color: #333;
+}
+
+/* ==================== ANIMACIONES BÁSICAS ==================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

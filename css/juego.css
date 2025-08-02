@@ -1,5 +1,16 @@
 /* ==================== ESTILOS DEL JUEGO ==================== */
 
+/* Contenedor principal del juego */
+#juego {
+  max-width: 600px;
+  margin: auto;
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  display: none;
+}
+
 /* Información de sala */
 .sala-info {
   display: flex;
@@ -179,4 +190,43 @@
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.02); }
+}
+
+/* ==================== SISTEMA DE PUNTUACIÓN ==================== */
+
+#puntuacion-display {
+  transition: all 0.3s ease;
+}
+
+#puntuacion-display:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
+.detalles-puntuacion {
+  animation: fadeInScale 0.5s ease-out;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.puntuacion-highlight {
+  animation: pulseGold 2s ease-in-out;
+}
+
+@keyframes pulseGold {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.6);
+  }
 }

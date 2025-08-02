@@ -1045,7 +1045,10 @@ async function guardarPuntuacion(puntuacionData) {
     detalles: puntuacionData,
     jugador: jugadorNombre,
     fecha: timestamp,
-    salaId: salaId
+    salaId: salaId,
+    intentos: puntuacionData.intentos,
+    tiempoSegundos: puntuacionData.tiempoSegundos,
+    modo: "victoria"
   });
   
   // Actualizar puntuación total del jugador
@@ -1055,7 +1058,8 @@ async function guardarPuntuacion(puntuacionData) {
     nombre: jugadorNombre, 
     puntuacionTotal: 0, 
     partidasGanadas: 0,
-    partidasJugadas: 0
+    partidasJugadas: 0,
+    partidasPerdidas: 0
   };
   
   await update(perfilRef, {
@@ -1063,33 +1067,50 @@ async function guardarPuntuacion(puntuacionData) {
     puntuacionTotal: (perfilActual.puntuacionTotal || 0) + puntuacionData.total,
     partidasGanadas: (perfilActual.partidasGanadas || 0) + 1,
     partidasJugadas: (perfilActual.partidasJugadas || 0) + 1,
+    partidasPerdidas: perfilActual.partidasPerdidas || 0, // Mantener las perdidas actuales
     ultimaPartida: timestamp
   });
   
   puntuacionJugador = (perfilActual.puntuacionTotal || 0) + puntuacionData.total;
 }
 
-async function actualizarPartidasJugadas() {
+async function actualizarPartidasJugadas(perdida = true) {
   const jugadorNombre = document.getElementById("jugadorNombre").textContent;
   const timestamp = Date.now();
   
-  // Solo actualizar partidasJugadas si perdió (no ganó)
   const perfilRef = ref(db, `perfiles/${userId}`);
   const perfilSnap = await get(perfilRef);
   const perfilActual = perfilSnap.val() || { 
     nombre: jugadorNombre, 
     puntuacionTotal: 0, 
     partidasGanadas: 0,
-    partidasJugadas: 0
+    partidasJugadas: 0,
+    partidasPerdidas: 0
   };
   
-  await update(perfilRef, {
+  // Actualizar estadísticas
+  const datosActualizados = {
     nombre: jugadorNombre,
     puntuacionTotal: perfilActual.puntuacionTotal || 0,
     partidasGanadas: perfilActual.partidasGanadas || 0,
     partidasJugadas: (perfilActual.partidasJugadas || 0) + 1,
+    partidasPerdidas: perdida ? (perfilActual.partidasPerdidas || 0) + 1 : (perfilActual.partidasPerdidas || 0),
     ultimaPartida: timestamp
-  });
+  };
+  
+  await update(perfilRef, datosActualizados);
+  
+  // Guardar en historial de puntuaciones (incluso si perdió con 0 puntos)
+  if (perdida) {
+    const puntuacionRef = push(ref(db, `puntuaciones/${userId}`));
+    await set(puntuacionRef, {
+      puntuacion: 0,
+      fecha: timestamp,
+      intentos: 10, // Máximo intentos alcanzados
+      tiempoSegundos: 0,
+      modo: "derrota"
+    });
+  }
 }
 
 function mostrarDetallesPuntuacion(puntuacionData) {
@@ -2346,7 +2367,8 @@ async function cargarEstadisticasPersonales() {
     const perfil = perfilSnap.val() || {
       puntuacionTotal: 0,
       partidasGanadas: 0,
-      partidasJugadas: 0
+      partidasJugadas: 0,
+      partidasPerdidas: 0
     };
     
     // Calcular estadísticas
@@ -2365,8 +2387,16 @@ async function cargarEstadisticasPersonales() {
         <div class="stat-label">Puntuación Total</div>
       </div>
       <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
-        <div class="stat-value">${perfil.partidasGanadas}</div>
+        <div class="stat-value">${perfil.partidasGanadas || 0}</div>
         <div class="stat-label">Partidas Ganadas</div>
+      </div>
+      <div class="stat-card" style="background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);">
+        <div class="stat-value">${perfil.partidasPerdidas || 0}</div>
+        <div class="stat-label">Partidas Perdidas</div>
+      </div>
+      <div class="stat-card" style="background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);">
+        <div class="stat-value">${perfil.partidasJugadas || 0}</div>
+        <div class="stat-label">Total Jugadas</div>
       </div>
       <div class="stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);">
         <div class="stat-value">${winRate}%</div>
@@ -2398,14 +2428,26 @@ async function cargarEstadisticasPersonales() {
       const item = document.createElement('div');
       item.className = 'history-item';
       
+      const esVictoria = puntuacion.modo === "victoria" || puntuacion.puntuacion > 0;
+      const tipoPartida = esVictoria ? "Victoria" : "Derrota";
+      const colorFondo = esVictoria ? "#28a745" : "#dc3545";
+      const icono = esVictoria ? "🏆" : "💔";
+      
       item.innerHTML = `
-        <div>
-          <div class="history-score">${puntuacion.puntuacion.toLocaleString()} puntos</div>
-          <div class="history-date">${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}</div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="background: ${colorFondo}; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+            ${icono}
+          </div>
+          <div>
+            <div class="history-score" style="color: ${colorFondo};">
+              ${esVictoria ? `${puntuacion.puntuacion.toLocaleString()} puntos` : tipoPartida}
+            </div>
+            <div class="history-date">${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}</div>
+          </div>
         </div>
         <div style="text-align: right; font-size: 12px; color: #6c757d;">
-          ${puntuacion.detalles.intentos} intento${puntuacion.detalles.intentos !== 1 ? 's' : ''} • 
-          ${puntuacion.detalles.tiempoSegundos}s
+          ${puntuacion.intentos || puntuacion.detalles?.intentos || 'N/A'} intento${(puntuacion.intentos || puntuacion.detalles?.intentos || 0) !== 1 ? 's' : ''} • 
+          ${puntuacion.tiempoSegundos || puntuacion.detalles?.tiempoSegundos || 0}s
         </div>
       `;
       

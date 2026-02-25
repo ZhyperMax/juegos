@@ -1,19 +1,39 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, get, onValue, push, remove, onDisconnect, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+import { getDatabase, ref, set as firebaseSet, get as firebaseGet, onValue, push, remove, onDisconnect, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBV5Er3cLo94tcGuNnGjNAsB9B0G1F4TnI",
-  authDomain: "buscacolores.firebaseapp.com",
-  projectId: "buscacolores",
-  storageBucket: "buscacolores.appspot.com",
-  messagingSenderId: "113743863860",
-  appId: "1:113743863860:web:7833345b5189a16e392a61",
-  measurementId: "G-HZXZ7HQ9H0",
-  databaseURL: "https://buscacolores-default-rtdb.firebaseio.com"
+  apiKey: "AIzaSyBSFtz1m44JuqrBy7OdSMW8EZWE-3RCYEk",
+  authDomain: "auth-ad358.firebaseapp.com",
+  projectId: "auth-ad358",
+  storageBucket: "auth-ad358.firebasestorage.app",
+  messagingSenderId: "877059425394",
+  appId: "1:877059425394:web:a4c55432a2eb5467466eeb",
+  measurementId: "G-KS30EDFRDW",
+  databaseURL: "https://auth-ad358-default-rtdb.firebaseio.com"
 };
 
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const auth = getAuth(app);
 const db = getDatabase(app);
+
+async function asegurarAuth() {
+  if (auth.currentUser?.uid) return auth.currentUser.uid;
+  const cred = await signInAnonymously(auth);
+  return cred.user.uid;
+}
+
+async function get(...args) {
+  const uid = await asegurarAuth();
+  return firebaseGet(...args);
+}
+
+async function set(...args) {
+  const uid = await asegurarAuth();
+  return firebaseSet(...args);
+}
 
 const colores = ["red", "blue", "green", "yellow", "orange", "purple"];
 let salaId = "";

@@ -18,7 +18,8 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
 onAuthStateChanged(auth, (user) => {
-  console.log("AUTH UID:", user?.uid);
+  firebaseUid = user?.uid || null;
+  console.log("AUTH UID:", firebaseUid);
 });
 const db = getDatabase(app);
 
@@ -40,7 +41,8 @@ async function set(...args) {
 
 const colores = ["red", "blue", "green", "yellow", "orange", "purple"];
 let salaId = "";
-let userId = null; // Se asignará después del login/registro
+let firebaseUid = null; // UID de Firebase Auth (se actualiza automáticamente)
+let userId = null; // ID custom del usuario (se asignará después del login/registro)
 let nombreUsuario = null; // Nombre del usuario autenticado
 let pinUsuario = null; // PIN del usuario (solo en memoria durante la sesión)
 
@@ -752,6 +754,13 @@ async function crearSala() {
     return;
   }
 
+  // Obtener el Firebase UID
+  const firebaseUid = auth.currentUser?.uid;
+  if (!firebaseUid) {
+    mostrarEstado("Error: No se pudo obtener UID de autenticación", "red");
+    return;
+  }
+
   // Obtener el modo de juego seleccionado
   const modoJuego = document.querySelector('input[name="modoJuego"]:checked').value;
   const maxJugadores = modoJuego === "solo" ? 1 : 2;
@@ -762,9 +771,15 @@ async function crearSala() {
   await set(ref(db, "salas/" + salaId), {
     secuencia: secuenciaSala,
     jugadores: {
-      [userId]: { nombre: nombreUsuario, intentosCount: 0, intentos: {} }
+      [firebaseUid]: { 
+        nombre: nombreUsuario, 
+        userId: userId, // Custom userId guardado como campo
+        puntuacion: 0,
+        intentos: 0,
+        estado: "conectado"
+      }
     },
-    turno: userId,
+    turno: firebaseUid,
     estadoJuego: modoJuego === "solo" ? "jugando" : "esperando",
     maxJugadores: maxJugadores,
     modoJuego: modoJuego
@@ -794,6 +809,13 @@ async function unirseSala() {
     return;
   }
 
+  // Obtener el Firebase UID
+  const firebaseUid = auth.currentUser?.uid;
+  if (!firebaseUid) {
+    mostrarEstado("Error: No se pudo obtener UID de autenticación", "red");
+    return;
+  }
+
   const codigo = document.getElementById("codigoUnir").value.trim().toUpperCase();
 
   if (!codigo) return mostrarEstado("Ingresa el código de sala", "red");
@@ -810,7 +832,13 @@ async function unirseSala() {
   if (modoJuego === "solo") return mostrarEstado("Esta sala es solo para un jugador", "red");
   if (Object.keys(jugadores).length >= maxJugadores) return mostrarEstado("Sala llena", "red");
 
-  await set(ref(db, `salas/${salaId}/jugadores/${userId}`), { nombre: nombreUsuario, intentosCount: 0, intentos: {} });
+  await set(ref(db, `salas/${salaId}/jugadores/${firebaseUid}`), { 
+    nombre: nombreUsuario, 
+    userId: userId, // Custom userId guardado como campo
+    puntuacion: 0,
+    intentos: 0,
+    estado: "conectado"
+  });
 
   mostrarEstado("Unido a sala " + salaId);
   await iniciarJuego(nombreUsuario);
@@ -877,7 +905,7 @@ async function iniciarJuego(nombreJugador) {
     console.error("Error al cargar secuencia:", error);
   });
 
-  onDisconnect(ref(db, `salas/${salaId}/jugadores/${userId}`)).remove();
+  onDisconnect(ref(db, `salas/${salaId}/jugadores/${firebaseUid}`)).remove();
   document.querySelector("button[onclick='enviarIntento()']").disabled = true;
   mostrarBotonSalir(true);
   ocultarFormularios();
@@ -1086,7 +1114,7 @@ function escucharTurno() {
     if (jugadorTurno === userId) {
       // Verificar si este jugador ya agotó sus intentos
       const jugadorData = sala.jugadores?.[userId];
-      const intentosUsados = jugadorData?.intentosCount || 0;
+      const intentosUsados = jugadorData?.intentos || 0;
       
       if (intentosUsados >= 10) {
         // Este jugador ya no puede jugar, mostrar mensaje de espera
@@ -1166,22 +1194,22 @@ function iniciarTemporizadorTurno(modoJuego = "dos") {
 }
 
 async function contarIntentoTiempoAgotado() {
-  const jugadorRef = ref(db, `salas/${salaId}/jugadores/${userId}`);
+  const jugadorRef = ref(db, `salas/${salaId}/jugadores/${firebaseUid}`);
   const snap = await get(jugadorRef);
   if (!snap.exists()) return;
 
   const data = snap.val();
   
   // Agregar intento fallido por tiempo
-  await push(ref(db, `salas/${salaId}/jugadores/${userId}/intentos`), {
+  await push(ref(db, `salas/${salaId}/jugadores/${firebaseUid}/historialIntentos`), {
     intento: ["tiempo", "agotado", "", ""],
     aciertosColorPos: 0,
     aciertosColor: 0,
     tiempoAgotado: true
   });
 
-  const nuevosIntentos = data.intentosCount + 1;
-  await update(jugadorRef, { intentosCount: nuevosIntentos });
+  const nuevosIntentos = data.intentos + 1;
+  await update(jugadorRef, { intentos: nuevosIntentos });
 
   // Actualizar contador superior inmediatamente
   actualizarContadorIntentosSupeior(nuevosIntentos);
@@ -1228,24 +1256,24 @@ async function contarIntentoTiempoAgotado() {
 async function enviarIntento() {
   // Usar el orden de selección en lugar de elementos seleccionados
   if (ordenSeleccion.length !== 4) return mostrarEstado("Elegí 4 colores", "red");
-  if (jugadorTurno !== userId) return mostrarEstado("No es tu turno", "red");
+  if (jugadorTurno !== firebaseUid) return mostrarEstado("No es tu turno", "red");
 
-  const jugadorRef = ref(db, `salas/${salaId}/jugadores/${userId}`);
+  const jugadorRef = ref(db, `salas/${salaId}/jugadores/${firebaseUid}`);
   const snap = await get(jugadorRef);
   if (!snap.exists()) return mostrarEstado("Jugador no encontrado", "red");
 
   const data = snap.val();
-  if (data.intentosCount >= 10) return mostrarEstado("Máximo 10 intentos", "red");
+  if (data.intentos >= 10) return mostrarEstado("Máximo 10 intentos", "red");
 
   const resultado = compararIntento(ordenSeleccion, secuenciaSala);
-  await push(ref(db, `salas/${salaId}/jugadores/${userId}/intentos`), {
+  await push(ref(db, `salas/${salaId}/jugadores/${firebaseUid}/historialIntentos`), {
     intento: ordenSeleccion,
     aciertosColorPos: resultado.aciertosColorPos,
     aciertosColor: resultado.aciertosColor
   });
 
-  const nuevosIntentos = data.intentosCount + 1;
-  await update(jugadorRef, { intentosCount: nuevosIntentos });
+  const nuevosIntentos = data.intentos + 1;
+  await update(jugadorRef, { intentos: nuevosIntentos });
 
   // Actualizar contador superior inmediatamente
   actualizarContadorIntentosSupeior(nuevosIntentos);
@@ -1681,12 +1709,12 @@ function mostrarMensajeVictoria() {
   
   // Calcular puntuación
   const tiempoTranscurrido = Date.now() - inicioPartida;
-  const jugadorRef = ref(db, `salas/${salaId}/jugadores/${userId}`);
+  const jugadorRef = ref(db, `salas/${salaId}/jugadores/${firebaseUid}`);
   
   get(jugadorRef).then(async (snap) => {
     if (snap.exists()) {
       const data = snap.val();
-      const intentosUsados = data.intentosCount || 1;
+      const intentosUsados = data.intentos || 1;
       
       // Calcular puntuación
       const puntuacionData = calcularPuntuacion(intentosUsados, tiempoTranscurrido);
@@ -1822,8 +1850,8 @@ function escucharTodosLosIntentos() {
     for (let jugadorId in data) {
       const jugador = data[jugadorId];
       const nombre = jugador.nombre;
-      const intentos = jugador.intentos || {};
-      const intentosCount = jugador.intentosCount || 0;
+      const historialIntentos = jugador.historialIntentos || {};
+      const intentosCount = jugador.intentos || 0; // Ahora es un número
       hayJugadores = true;
 
       // Verificar si este jugador aún tiene intentos
@@ -1860,7 +1888,7 @@ function escucharTodosLosIntentos() {
       historial.appendChild(seccionJugador);
 
       // Mostrar intentos del jugador en orden cronológico (más reciente al final)
-      const intentosArray = Object.values(intentos).sort((a, b) => a.timestamp - b.timestamp);
+      const intentosArray = Object.values(historialIntentos).sort((a, b) => a.timestamp - b.timestamp);
       intentosArray.forEach(intentoData => {
         const div = document.createElement("div");
         div.className = "intento-container";
@@ -2101,10 +2129,12 @@ async function unirseDesdeLista(codigo) {
   
   if (modoJuego === "solo") return mostrarEstado("Esta sala es solo para un jugador", "red");
 
-  await set(ref(db, `salas/${salaId}/jugadores/${userId}`), {
+  await set(ref(db, `salas/${salaId}/jugadores/${firebaseUid}`), {
     nombre: nombreUsuario,
-    intentosCount: 0,
-    intentos: {}
+    userId: userId, // Custom userId guardado como campo
+    puntuacion: 0,
+    intentos: 0,
+    estado: "conectado"
   });
 
   mostrarEstado("Unido a sala " + salaId);
@@ -2117,10 +2147,10 @@ async function unirseDesdeLista(codigo) {
 // ---------------------- SALIR / LIMPIEZA ------------------------
 
 async function salirDeSala() {
-  if (!salaId || !userId) return;
+  if (!salaId || !firebaseUid) return;
   const salaRef = ref(db, `salas/${salaId}`);
 
-  await remove(ref(db, `salas/${salaId}/jugadores/${userId}`));
+  await remove(ref(db, `salas/${salaId}/jugadores/${firebaseUid}`));
 
   // Obtener la lista actualizada de jugadores
   const snap = await get(ref(db, `salas/${salaId}/jugadores`));
@@ -2532,8 +2562,7 @@ async function iniciarNuevaPartida() {
   
   for (const jugadorId in jugadores) {
     await update(ref(db, `salas/${salaId}/jugadores/${jugadorId}`), {
-      intentosCount: 0,
-      intentos: {}
+      intentos: 0
     });
   }
   
@@ -3142,10 +3171,12 @@ async function unirseSalaDirecta(codigo) {
     salaId = codigo;
     const jugadorNombre = document.getElementById("currentUserName").textContent;
     
-    await set(ref(db, `salas/${salaId}/jugadores/${userId}`), {
+    await set(ref(db, `salas/${salaId}/jugadores/${firebaseUid}`), {
       nombre: jugadorNombre,
-      intentos: {},
-      intentosCount: 0
+      userId: userId, // Custom userId guardado como campo
+      puntuacion: 0,
+      intentos: 0,
+      estado: "conectado"
     });
     
     // Verificar y activar el estado del juego si es necesario
@@ -3381,9 +3412,13 @@ async function manejarResultadoJuego(tipoResultado, ganadorId = null) {
     }
     
     // En modo multijugador, notificar a todos los jugadores
+    // Obtener el Firebase UID del ganador (si hay victoria)
+    const ganadorUid = tipoResultado === "victoria" ? auth.currentUser?.uid : null;
+    
     const resultadoData = {
       tipo: tipoResultado,
-      ganador: ganadorId,
+      ganadorUid: ganadorUid,      // ✅ UID real del ganador
+      ganadorUserId: ganadorId,    // opcional: tu id viejo
       timestamp: Date.now(),
       secuenciaCorrecta: secuenciaSala || salaData.secuencia
     };
@@ -3403,7 +3438,8 @@ function escucharResultadosJuego() {
     if (!resultado) return;
     
     const tipoResultado = resultado.tipo;
-    const ganadorId = resultado.ganador;
+    const ganadorUid = resultado.ganadorUid;
+    const ganadorUserId = resultado.ganadorUserId; // ID custom (opcional)
     const secuenciaCorrecta = resultado.secuenciaCorrecta;
     
     // Actualizar secuencia local si es necesario
@@ -3413,14 +3449,16 @@ function escucharResultadosJuego() {
     
     // Determinar si este jugador ganó o perdió
     if (tipoResultado === "victoria") {
-      if (ganadorId === userId) {
+      if (ganadorUid === auth.currentUser?.uid) {
         // Este jugador ganó
         juegoTerminado = true;
         mostrarMensajeVictoria();
       } else {
         // Este jugador perdió (el otro ganó)
         juegoTerminado = true;
-        mostrarMensajeDerrota(`${jugadoresEnSala[ganadorId]?.nombre || 'El otro jugador'} ganó la partida`);
+        // Usar ganadorUserId para buscar el nombre si está disponible, sino usar ganadorUid
+        const ganadorIdParaBuscar = ganadorUserId || ganadorUid;
+        mostrarMensajeDerrota(`${jugadoresEnSala[ganadorIdParaBuscar]?.nombre || 'El otro jugador'} ganó la partida`);
       }
     } else if (tipoResultado === "derrota_tiempo" || tipoResultado === "derrota_intentos") {
       // Ambos jugadores perdieron
@@ -3502,7 +3540,7 @@ async function verificarFinJuegoMultijugador() {
     // Verificar el estado de todos los jugadores
     for (const jugadorId of jugadores) {
       const jugadorData = salaData.jugadores[jugadorId];
-      const intentosCount = jugadorData.intentosCount || 0;
+      const intentosCount = jugadorData.intentos || 0;
       console.log(`Jugador ${jugadorId}: ${intentosCount}/10 intentos`);
       
       if (intentosCount < 10) {
@@ -3524,7 +3562,7 @@ async function verificarFinJuegoMultijugador() {
     } else {
       // Aún hay jugadores con intentos disponibles
       const miData = salaData.jugadores[userId];
-      const misIntentos = miData?.intentosCount || 0;
+      const misIntentos = miData?.intentos || 0;
       
       console.log(`Mis intentos: ${misIntentos}/10`);
       

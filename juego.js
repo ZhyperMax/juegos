@@ -11,7 +11,7 @@ const firebaseConfig = {
   messagingSenderId: "877059425394",
   appId: "1:877059425394:web:a4c55432a2eb5467466eeb",
   measurementId: "G-KS30EDFRDW",
-  databaseURL: "https://auth-ad358-default-rtdb.firebaseio.com"
+  databaseURL: "https://auth-ad358-default-rtdb.firebaseio.com/"
 };
 
 const app = initializeApp(firebaseConfig);
